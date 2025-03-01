@@ -18,7 +18,7 @@ samples, guidance on mobile development, and a full API reference.
 ## To Run
 1. Clone the repository.
 2. Clean and download the packages:
-   `flutter clean
+   `flutter clean &&
    flutter pub get`
 3. Run the project:
    `flutter run`

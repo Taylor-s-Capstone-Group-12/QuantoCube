@@ -73,6 +73,7 @@ class _SignUpContentState extends State<SignUpContent> {
   @override
   void initState() {
     emailController = TextEditingController();
+    emailController.addListener(_onTextChanged);
     receiveNewsletters = true;
     super.initState();
   }
@@ -81,6 +82,10 @@ class _SignUpContentState extends State<SignUpContent> {
   void dispose() {
     emailController.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {});
   }
 
   void onSignUpPressed() {
@@ -97,7 +102,8 @@ class _SignUpContentState extends State<SignUpContent> {
           textInputAction: TextInputAction.done,
         ),
         const SizedBox(height: 20),
-        SignUpButton(onPressed: onSignUpPressed),
+        SignUpButton(
+            onPressed: emailController.text == '' ? null : onSignUpPressed),
       ],
     );
   }
@@ -164,7 +170,7 @@ class SignUpButton extends StatelessWidget {
     required this.onPressed,
   });
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

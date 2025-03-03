@@ -1,9 +1,12 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:quantocube/page/auth/signup_page.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class SignUpPage extends StatelessWidget {
+  const SignUpPage({
+    super.key,
+    required this.isHomeowner,
+  });
+
+  final bool isHomeowner;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +21,7 @@ class LoginPage extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Log In',
+                  'Sign Up',
                   style: TextStyle(
                     fontSize: 30,
                     height: 1.2,
@@ -29,7 +32,7 @@ class LoginPage extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: LoginBox(),
+              child: SignUpBox(),
             ),
           ],
         ),
@@ -38,8 +41,8 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-class LoginBox extends StatelessWidget {
-  const LoginBox({super.key});
+class SignUpBox extends StatelessWidget {
+  const SignUpBox({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -51,57 +54,37 @@ class LoginBox extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 45),
-      child: const LoginBoxContent(),
+      child: const SignUpContent(),
     );
   }
 }
 
-class LoginBoxContent extends StatefulWidget {
-  const LoginBoxContent({super.key});
+class SignUpContent extends StatefulWidget {
+  const SignUpContent({super.key});
 
   @override
-  State<LoginBoxContent> createState() => _LoginBoxContentState();
+  State<SignUpContent> createState() => _SignUpContentState();
 }
 
-class _LoginBoxContentState extends State<LoginBoxContent> {
+class _SignUpContentState extends State<SignUpContent> {
   late TextEditingController emailController;
-  late TextEditingController passwordController;
-  late bool passwordObscure;
+  late bool receiveNewsletters;
 
   @override
   void initState() {
     emailController = TextEditingController();
-    passwordController = TextEditingController();
-    passwordObscure = true;
+    receiveNewsletters = true;
     super.initState();
   }
 
   @override
   void dispose() {
     emailController.dispose();
-    passwordController.dispose();
     super.dispose();
   }
 
-  bool onLogin(String email, String password) {
-    // TO-DO: Implement login logic here
-    return true;
-  }
-
-  void onForgetPassword() {
-    // TO-DO: Implement reset password logic here
-  }
-
-  void onSignUp() {
-    // TO-DO: Implement sign up logic here
-    Navigator.push(
-      context,
-      CupertinoPageRoute(
-        builder: (context) => const SignUpPage(
-          isHomeowner: true,
-        ),
-      ),
-    );
+  void onSignUpPressed() {
+    // Implement sign up logic here
   }
 
   @override
@@ -111,33 +94,10 @@ class _LoginBoxContentState extends State<LoginBoxContent> {
         TextInputBox(
           controller: emailController,
           hintText: 'Email',
-        ),
-        const SizedBox(height: 20),
-        TextInputBox(
-          controller: passwordController,
-          hintText: 'Password',
-          obscureText: passwordObscure,
           textInputAction: TextInputAction.done,
-          suffixIcon: GestureDetector(
-            onTap: () {
-              setState(() {
-                passwordObscure = !passwordObscure;
-              });
-            },
-            child: Icon(
-              passwordObscure ? Icons.visibility : Icons.visibility_off,
-              color: Colors.white,
-            ),
-          ),
         ),
         const SizedBox(height: 20),
-        LoginButton(
-          onPressed: () =>
-              onLogin(emailController.text, passwordController.text),
-        ),
-        const SizedBox(height: 20),
-        AdditionalButtons(
-            onForgetPassword: onForgetPassword, onSignUp: onSignUp)
+        SignUpButton(onPressed: onSignUpPressed),
       ],
     );
   }
@@ -198,8 +158,8 @@ class TextInputBox extends StatelessWidget {
   }
 }
 
-class LoginButton extends StatelessWidget {
-  const LoginButton({
+class SignUpButton extends StatelessWidget {
+  const SignUpButton({
     super.key,
     required this.onPressed,
   });
@@ -228,94 +188,6 @@ class LoginButton extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class AdditionalButtons extends StatelessWidget {
-  const AdditionalButtons({
-    super.key,
-    required this.onForgetPassword,
-    required this.onSignUp,
-  });
-
-  final VoidCallback onForgetPassword;
-  final VoidCallback onSignUp;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ForgotPasswordButton(onPressed: onForgetPassword),
-        SignUpButton(onPressed: onSignUp),
-      ],
-    );
-  }
-}
-
-class ForgotPasswordButton extends StatelessWidget {
-  const ForgotPasswordButton({
-    super.key,
-    required this.onPressed,
-  });
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Text(
-          'Forgot Password',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class SignUpButton extends StatelessWidget {
-  const SignUpButton({
-    super.key,
-    required this.onPressed,
-  });
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final TextStyle textStyle = TextStyle(
-      color: Theme.of(context).colorScheme.primary,
-      fontWeight: FontWeight.w700,
-      fontSize: 12,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Don\'t have an account? ',
-            style: textStyle.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          GestureDetector(
-            onTap: onPressed,
-            child: Text(
-              'Sign Up',
-              style: textStyle,
-            ),
-          ),
-        ],
       ),
     );
   }

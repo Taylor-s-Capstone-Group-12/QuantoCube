@@ -37,6 +37,8 @@ dependencies:
   google_fonts: ^6.2.1
   dots_indicator: ^4.0.0
   smooth_page_indicator: ^1.2.1
+  crypto: ^3.0.6
+  http: ^1.3.0
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +66,7 @@ flutter:
     - assets/
     - assets/mascot/
     - assets/introduction/
+    - test/test_data/
 
 
   fonts:

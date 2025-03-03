@@ -22,6 +22,15 @@ migrate_working_dir/
 #.vscode/
 .vscode/settings.json
 
+# Ignore Firebase credentials
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+
+# Ignore Flutter environment files
+.env
+.env.local
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id

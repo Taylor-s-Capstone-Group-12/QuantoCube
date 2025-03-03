@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:quantocube/page/auth/login_page.dart';
-import 'package:quantocube/page/auth/signup_page.dart';
+import 'package:quantocube/page/auth/signup/signup_page.dart';
 
 class AuthSelection extends StatelessWidget {
   const AuthSelection({super.key});

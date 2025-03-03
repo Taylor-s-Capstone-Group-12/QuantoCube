@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 
-class SignUpPage extends StatelessWidget {
-  const SignUpPage({
+class PasswordSetupPage extends StatelessWidget {
+  const PasswordSetupPage({
     super.key,
-    required this.isHomeowner,
+    required this.signUpData,
   });
 
-  final bool isHomeowner;
+  final Map<String, String> signUpData;
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Padding(
-        padding: EdgeInsets.only(top: 100.0),
+        padding: const EdgeInsets.only(top: 100.0),
         child: Column(
           children: [
-            Padding(
+            const Padding(
               padding: EdgeInsets.symmetric(horizontal: 30.0, vertical: 35),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Sign Up',
+                  'Create a Password',
                   style: TextStyle(
                     fontSize: 30,
                     height: 1.2,
@@ -32,7 +32,9 @@ class SignUpPage extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: SignUpBox(),
+              child: SignUpBox(
+                signUpData: signUpData,
+              ),
             ),
           ],
         ),
@@ -42,7 +44,12 @@ class SignUpPage extends StatelessWidget {
 }
 
 class SignUpBox extends StatelessWidget {
-  const SignUpBox({super.key});
+  const SignUpBox({
+    super.key,
+    required this.signUpData,
+  });
+
+  final Map<String, String> signUpData;
 
   @override
   Widget build(BuildContext context) {
@@ -54,33 +61,42 @@ class SignUpBox extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 45),
-      child: const SignUpContent(),
+      child: SignUpContent(signUpData: signUpData),
     );
   }
 }
 
 class SignUpContent extends StatefulWidget {
-  const SignUpContent({super.key});
+  const SignUpContent({
+    super.key,
+    required this.signUpData,
+  });
+
+  final Map<String, String> signUpData;
 
   @override
   State<SignUpContent> createState() => _SignUpContentState();
 }
 
 class _SignUpContentState extends State<SignUpContent> {
-  late TextEditingController emailController;
-  late bool receiveNewsletters;
+  late TextEditingController passwordController;
+  late TextEditingController confirmPasswordController;
+  late bool isValid;
 
   @override
   void initState() {
-    emailController = TextEditingController();
-    emailController.addListener(_onTextChanged);
-    receiveNewsletters = true;
+    passwordController = TextEditingController();
+    confirmPasswordController = TextEditingController();
+    passwordController.addListener(_onTextChanged);
+    confirmPasswordController.addListener(_onTextChanged);
+    isValid = false;
     super.initState();
   }
 
   @override
   void dispose() {
-    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -88,8 +104,12 @@ class _SignUpContentState extends State<SignUpContent> {
     setState(() {});
   }
 
-  void onSignUpPressed() {
-    // Implement sign up logic here
+  void passwordValidator() {
+    // TODO: Implement sign up logic here
+  }
+
+  void onContinue() {
+    // TODO: Implement sign up logic here
   }
 
   @override
@@ -97,13 +117,19 @@ class _SignUpContentState extends State<SignUpContent> {
     return Column(
       children: [
         TextInputBox(
-          controller: emailController,
-          hintText: 'Email',
-          textInputAction: TextInputAction.done,
+          controller: passwordController,
+          hintText: 'Password',
+          obscureText: true,
         ),
         const SizedBox(height: 20),
-        SignUpButton(
-            onPressed: emailController.text == '' ? null : onSignUpPressed),
+        TextInputBox(
+          controller: confirmPasswordController,
+          hintText: 'Confirm Password',
+          textInputAction: TextInputAction.done,
+          obscureText: true,
+        ),
+        const SizedBox(height: 20),
+        SignUpButton(onPressed: isValid ? onContinue : null),
       ],
     );
   }
@@ -142,7 +168,7 @@ class TextInputBox extends StatelessWidget {
           filled: true,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-          fillColor: Colors.black,
+          fillColor: Theme.of(context).colorScheme.surface,
           border: OutlineInputBorder(
             borderSide: BorderSide.none, // No outline when not focused
             borderRadius: BorderRadius.circular(10.0),
@@ -187,7 +213,7 @@ class SignUpButton extends StatelessWidget {
           ),
         ),
         child: const Text(
-          'Enter',
+          'Continue',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 18,
@@ -195,6 +221,42 @@ class SignUpButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class MarketingCheckbox extends StatelessWidget {
+  const MarketingCheckbox({
+    super.key,
+    required this.receiveNewsletters,
+    required this.onChange,
+  });
+
+  final bool receiveNewsletters;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Checkbox(
+          value: receiveNewsletters,
+          onChanged: (value) {
+            onChange();
+          },
+          activeColor: Theme.of(context).colorScheme.primary,
+          checkColor:
+              receiveNewsletters ? Colors.white : const Color(0xFF979797),
+        ),
+        const Text(
+          'I want to receive the latest news, updates, and\nexclusive offers from QuantoCube!',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF979797),
+          ),
+        ),
+      ],
     );
   }
 }

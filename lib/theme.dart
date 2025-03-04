@@ -6,6 +6,7 @@ final ThemeData projectTheme = ThemeData(
     seedColor: const Color.fromARGB(255, 254, 89, 37),
     primary: const Color.fromARGB(255, 254, 89, 37),
     secondary: const Color.fromARGB(255, 27, 27, 27),
+    error: Colors.red,
     brightness: Brightness.dark,
   ),
   buttonTheme: const ButtonThemeData(

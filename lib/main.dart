@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:quantocube/route/error_page.dart';
+import 'package:quantocube/route/route_generator.dart';
 import 'package:quantocube/theme.dart';
 
 void main() {
@@ -18,7 +19,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: projectTheme,
-      home: ErrorPage(),
+      home: IntroductionPage(),
+      onGenerateRoute: RouteGenerator.generateRoute,
     );
   }
 }

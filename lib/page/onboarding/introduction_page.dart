@@ -80,12 +80,7 @@ class NextButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: () {
         if (pageController.page == pages.length - 1) {
-          Navigator.push(
-            context,
-            CupertinoPageRoute(
-              builder: (_) => const AuthSelection(),
-            ),
-          );
+          Navigator.pushNamed(context, '/auth');
         } else {
           pageController.nextPage(
             duration: const Duration(milliseconds: 750),

@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:quantocube/page/auth/signup/signup_page.dart';
 import 'package:quantocube/page/Homeowner/homeowner_homepage.dart';
 
 class LoginPage extends StatelessWidget {
@@ -82,11 +84,24 @@ class _LoginBoxContentState extends State<LoginBoxContent> {
     super.dispose();
   }
 
-  // ✅ Updated: Directly navigate to HomeownerHomePage without verification
-  void onLogin() {
-    Navigator.pushReplacement(
+  bool onLogin(String email, String password) {
+    // TODO: Implement login logic here
+    return true;
+  }
+
+  void onForgetPassword() {
+    // TODO: Implement reset password logic here
+  }
+
+  void onSignUp() {
+    // TODO: Implement sign up logic here
+    Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const HomeownerHomePage()),
+      CupertinoPageRoute(
+        builder: (context) => const SignUpPage(
+          isHomeowner: true,
+        ),
+      ),
     );
   }
 
@@ -150,8 +165,9 @@ class TextInputBox extends StatelessWidget {
           hintText: hintText,
           hintStyle: const TextStyle(color: Colors.white),
           filled: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-          fillColor: Colors.black,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+          fillColor: Theme.of(context).colorScheme.surface,
           border: OutlineInputBorder(
             borderSide: BorderSide.none,
             borderRadius: BorderRadius.circular(10.0),
@@ -198,6 +214,94 @@ class LoginButton extends StatelessWidget {
             color: Colors.white,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class AdditionalButtons extends StatelessWidget {
+  const AdditionalButtons({
+    super.key,
+    required this.onForgetPassword,
+    required this.onSignUp,
+  });
+
+  final VoidCallback onForgetPassword;
+  final VoidCallback onSignUp;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ForgotPasswordButton(onPressed: onForgetPassword),
+        SignUpButton(onPressed: onSignUp),
+      ],
+    );
+  }
+}
+
+class ForgotPasswordButton extends StatelessWidget {
+  const ForgotPasswordButton({
+    super.key,
+    required this.onPressed,
+  });
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Text(
+          'Forgot Password',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SignUpButton extends StatelessWidget {
+  const SignUpButton({
+    super.key,
+    required this.onPressed,
+  });
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextStyle textStyle = TextStyle(
+      color: Theme.of(context).colorScheme.primary,
+      fontWeight: FontWeight.w700,
+      fontSize: 12,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Don\'t have an account? ',
+            style: textStyle.copyWith(
+              color: Colors.white,
+            ),
+          ),
+          GestureDetector(
+            onTap: onPressed,
+            child: Text(
+              'Sign Up',
+              style: textStyle,
+            ),
+          ),
+        ],
       ),
     );
   }

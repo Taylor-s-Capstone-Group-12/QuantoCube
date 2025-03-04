@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: projectTheme,
-      home: IntroductionPage(),
+      home: IntroductionPage(), // ✅ Always starts with IntroductionPage
     );
   }
 }

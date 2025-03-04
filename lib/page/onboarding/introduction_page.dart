@@ -28,8 +28,7 @@ class IntroductionPage extends StatelessWidget {
             SizedBox(
               height: 600,
               child: PageView(
-                physics:
-                    const NeverScrollableScrollPhysics(), // disable swipe by users
+                physics: const NeverScrollableScrollPhysics(), // Disable manual swiping
                 scrollDirection: Axis.horizontal,
                 controller: _pageController,
                 children: _pages,
@@ -53,7 +52,7 @@ class IntroductionPage extends StatelessWidget {
                         dotWidth: 10,
                       ),
                     ),
-                    NextButton(pageController: _pageController, pages: _pages),
+                    _NextButton(pageController: _pageController, pages: _pages),
                   ],
                 ),
               ),
@@ -65,12 +64,8 @@ class IntroductionPage extends StatelessWidget {
   }
 }
 
-class NextButton extends StatelessWidget {
-  const NextButton({
-    super.key,
-    required this.pageController,
-    required this.pages,
-  });
+class _NextButton extends StatelessWidget {
+  const _NextButton({super.key, required this.pageController, required this.pages});
 
   final PageController pageController;
   final List<Widget> pages;
@@ -80,11 +75,11 @@ class NextButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: () {
         if (pageController.page == pages.length - 1) {
-          Navigator.push(
+          // ✅ FIX: Navigate to `AuthSelection` and remove all previous screens
+          Navigator.pushAndRemoveUntil(
             context,
-            CupertinoPageRoute(
-              builder: (_) => const AuthSelection(),
-            ),
+            CupertinoPageRoute(builder: (_) => const AuthSelection()),
+            (Route<dynamic> route) => false, // Remove all previous routes
           );
         } else {
           pageController.nextPage(
@@ -99,11 +94,7 @@ class NextButton extends StatelessWidget {
         minimumSize: const Size(54, 54),
         padding: EdgeInsets.zero,
       ),
-      child: const Icon(
-        Icons.arrow_forward,
-        color: Colors.white,
-        size: 35,
-      ),
+      child: const Icon(Icons.arrow_forward, color: Colors.white, size: 35),
     );
   }
 }

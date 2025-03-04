@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:quantocube/theme.dart';
 
@@ -17,7 +16,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: projectTheme,
-      home: IntroductionPage(),
+      home: IntroductionPage(), // ✅ Always starts with IntroductionPage
     );
   }
 }

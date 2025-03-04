@@ -54,9 +54,10 @@ class HomeownerHomePage extends StatelessWidget {
             ),
           ],
         ),
-        CircleAvatar(
+        const CircleAvatar(
           radius: 22,
-          backgroundImage: AssetImage("assets/mascot/icons.png"), // Profile picture
+          backgroundImage:
+              AssetImage("assets/mascot/icons.png"), // Profile picture
         ),
       ],
     );
@@ -178,11 +179,14 @@ class HomeownerHomePage extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              _buildContractorCard("assets/mascot/tv_greet.png"), // Corrected path
+              _buildContractorCard(
+                  "assets/mascot/tv_greet.png"), // Corrected path
               const SizedBox(width: 10),
-              _buildContractorCard("assets/mascot/tv_smile.png"), // Corrected path
+              _buildContractorCard(
+                  "assets/mascot/tv_smile.png"), // Corrected path
               const SizedBox(width: 10),
-              _buildContractorCard("assets/mascot/tv_cone_side.png"), // Corrected path
+              _buildContractorCard(
+                  "assets/mascot/tv_cone_side.png"), // Corrected path
             ],
           ),
         ),

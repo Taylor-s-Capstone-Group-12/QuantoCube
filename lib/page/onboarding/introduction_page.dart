@@ -20,6 +20,7 @@ class IntroductionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 80),
         child: Column(
@@ -80,12 +81,7 @@ class NextButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: () {
         if (pageController.page == pages.length - 1) {
-          Navigator.push(
-            context,
-            CupertinoPageRoute(
-              builder: (_) => const AuthSelection(),
-            ),
-          );
+          Navigator.pushNamed(context, '/auth');
         } else {
           pageController.nextPage(
             duration: const Duration(milliseconds: 750),

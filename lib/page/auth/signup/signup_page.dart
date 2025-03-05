@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:quantocube/page/auth/signup/name_setup_page.dart';
 import 'package:quantocube/page/auth/signup/password_setup_page.dart';
 
 class SignUpPage extends StatelessWidget {
@@ -74,6 +75,8 @@ class _SignUpContentState extends State<SignUpContent> {
 
   Map<String, String> signUpData = {
     'email': '',
+    'name': '',
+    'password': '',
     'receiveNewsletters': 'true',
   };
 
@@ -103,7 +106,7 @@ class _SignUpContentState extends State<SignUpContent> {
     Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (_) => PasswordSetupPage(
+        builder: (_) => NameSetupPage(
           signUpData: signUpData,
         ),
       ),

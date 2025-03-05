@@ -1,4 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:quantocube/page/auth/validator.dart';
+import 'package:quantocube/page/onboarding/welcome_page.dart';
 
 class PasswordSetupPage extends StatelessWidget {
   const PasswordSetupPage({
@@ -83,12 +86,12 @@ class _SignUpContentState extends State<SignUpContent> {
   late TextEditingController confirmPasswordController;
   late bool isValid;
 
+  final _formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     passwordController = TextEditingController();
     confirmPasswordController = TextEditingController();
-    passwordController.addListener(_onTextChanged);
-    confirmPasswordController.addListener(_onTextChanged);
     isValid = false;
     super.initState();
   }
@@ -100,37 +103,98 @@ class _SignUpContentState extends State<SignUpContent> {
     super.dispose();
   }
 
-  void _onTextChanged() {
-    setState(() {});
-  }
-
-  void passwordValidator() {
-    // TODO: Implement sign up logic here
-  }
-
+  // navigate to the welcome page if the password is acceptable.
   void onContinue() {
-    // TODO: Implement sign up logic here
+    widget.signUpData['password'] = passwordController.text;
+    // TODO: Implement sign up logic here.
+    //Validator.signUp(widget.signUpData);
+
+    // For now, navigate to the welcome page.
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => WelcomePage(
+          name: widget.signUpData['name'] ?? 'User',
+        ),
+      ),
+    );
+  }
+
+  // function to update the validation flag
+  void setValidation(bool status) {
+    setState(() {
+      isValid = status;
+    });
+  }
+
+  // function to validate the password
+  bool passwordValidator() {
+    // TODO: Implement password validation
+    return true;
+  }
+
+  // function to validate the confirm password
+  bool confirmPasswordValidator() {
+    if (passwordController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty) {
+      setValidation(false);
+      return false;
+    } else if (passwordController.text != confirmPasswordController.text) {
+      setValidation(false);
+      return false;
+    } else {
+      setValidation(true);
+      return true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TextInputBox(
-          controller: passwordController,
-          hintText: 'Password',
-          obscureText: true,
-        ),
-        const SizedBox(height: 20),
-        TextInputBox(
-          controller: confirmPasswordController,
-          hintText: 'Confirm Password',
-          textInputAction: TextInputAction.done,
-          obscureText: true,
-        ),
-        const SizedBox(height: 20),
-        SignUpButton(onPressed: isValid ? onContinue : null),
-      ],
+    return Form(
+      autovalidateMode: AutovalidateMode.onUnfocus,
+      key: _formKey,
+      child: Column(
+        children: [
+          TextInputBox(
+            controller: passwordController,
+            hintText: 'Password',
+            obscureText: true,
+          ),
+          const SizedBox(height: 20),
+          TextInputBox(
+            controller: confirmPasswordController,
+            hintText: 'Confirm Password',
+            textInputAction: TextInputAction.done,
+            obscureText: true,
+            validator: (value) {
+              final bool validate = confirmPasswordValidator();
+              if (validate) {
+                return null;
+              } else {
+                return 'Password does not match';
+              }
+            },
+            onFieldSubmitted: (value) {
+              setState(() {
+                if (_formKey.currentState!.validate()) {
+                  isValid = true;
+                } else {
+                  isValid = false;
+                }
+              });
+            },
+            onChanged: (value) {
+              if (value.isNotEmpty && passwordController.text.isNotEmpty) {
+                confirmPasswordValidator();
+              } else {
+                setValidation(false);
+              }
+            },
+          ),
+          const SizedBox(height: 20),
+          SignUpButton(onPressed: isValid ? onContinue : null),
+        ],
+      ),
     );
   }
 }
@@ -143,6 +207,9 @@ class TextInputBox extends StatelessWidget {
     this.obscureText = false, // default to false
     this.textInputAction = TextInputAction.next, // default to next
     this.suffixIcon,
+    this.validator,
+    this.onFieldSubmitted,
+    this.onChanged,
   });
 
   final TextEditingController controller;
@@ -150,42 +217,52 @@ class TextInputBox extends StatelessWidget {
   final bool obscureText;
   final TextInputAction textInputAction;
   final Widget? suffixIcon;
+  final String? Function(String?)? validator;
+  final void Function(String)? onFieldSubmitted;
+  final void Function(String)? onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 70,
-      child: TextFormField(
-        textInputAction: textInputAction,
-        controller: controller,
-        decoration: InputDecoration(
-          //contentPadding: const EdgeInsets.all(20),
-          isDense: false,
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: Colors.white,
-          ),
-          filled: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-          fillColor: Theme.of(context).colorScheme.surface,
-          border: OutlineInputBorder(
-            borderSide: BorderSide.none, // No outline when not focused
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary, // Primary color outline when focused
-              width: 2.0,
-            ),
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          suffixIcon: suffixIcon,
+    return TextFormField(
+      textInputAction: textInputAction,
+      controller: controller,
+      decoration: InputDecoration(
+        //contentPadding: const EdgeInsets.all(20),
+        isDense: false,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          color: Colors.white,
         ),
-        obscureText: obscureText,
+        filled: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        fillColor: Theme.of(context).colorScheme.surface,
+        border: OutlineInputBorder(
+          borderSide: BorderSide.none, // No outline when not focused
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Theme.of(context)
+                .colorScheme
+                .primary, // Primary color outline when focused
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        suffixIcon: suffixIcon,
+        errorBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.error,
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(10.0),
+        ),
       ),
+      obscureText: obscureText,
+      validator: validator,
+      onFieldSubmitted: onFieldSubmitted,
+      onChanged: onChanged,
     );
   }
 }
@@ -221,42 +298,6 @@ class SignUpButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class MarketingCheckbox extends StatelessWidget {
-  const MarketingCheckbox({
-    super.key,
-    required this.receiveNewsletters,
-    required this.onChange,
-  });
-
-  final bool receiveNewsletters;
-  final VoidCallback onChange;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Checkbox(
-          value: receiveNewsletters,
-          onChanged: (value) {
-            onChange();
-          },
-          activeColor: Theme.of(context).colorScheme.primary,
-          checkColor:
-              receiveNewsletters ? Colors.white : const Color(0xFF979797),
-        ),
-        const Text(
-          'I want to receive the latest news, updates, and\nexclusive offers from QuantoCube!',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF979797),
-          ),
-        ),
-      ],
     );
   }
 }

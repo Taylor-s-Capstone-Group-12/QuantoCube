@@ -1,4 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:quantocube/page/auth/validator.dart';
+import 'package:quantocube/page/onboarding/welcome_page.dart';
 
 class PasswordSetupPage extends StatelessWidget {
   const PasswordSetupPage({
@@ -84,15 +87,11 @@ class _SignUpContentState extends State<SignUpContent> {
   late bool isValid;
 
   final _formKey = GlobalKey<FormState>();
-  bool showErrorText = false;
-  Color borderColor = Colors.transparent;
 
   @override
   void initState() {
     passwordController = TextEditingController();
     confirmPasswordController = TextEditingController();
-    passwordController.addListener(_onTextChanged);
-    confirmPasswordController.addListener(_onTextChanged);
     isValid = false;
     super.initState();
   }
@@ -104,21 +103,55 @@ class _SignUpContentState extends State<SignUpContent> {
     super.dispose();
   }
 
-  void _onTextChanged() {
-    setState(() {});
-  }
-
-  void passwordValidator() {
-    // TODO: Implement sign up logic here
-  }
-
+  // navigate to the welcome page if the password is acceptable.
   void onContinue() {
-    // TODO: Implement sign up logic here
+    widget.signUpData['password'] = passwordController.text;
+    // TODO: Implement sign up logic here.
+    //Validator.signUp(widget.signUpData);
+
+    // For now, navigate to the welcome page.
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => WelcomePage(
+          name: widget.signUpData['name'] ?? 'User',
+        ),
+      ),
+    );
+  }
+
+  // function to update the validation flag
+  void setValidation(bool status) {
+    setState(() {
+      isValid = status;
+    });
+  }
+
+  // function to validate the password
+  bool passwordValidator() {
+    // TODO: Implement password validation
+    return true;
+  }
+
+  // function to validate the confirm password
+  bool confirmPasswordValidator() {
+    if (passwordController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty) {
+      setValidation(false);
+      return false;
+    } else if (passwordController.text != confirmPasswordController.text) {
+      setValidation(false);
+      return false;
+    } else {
+      setValidation(true);
+      return true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Form(
+      autovalidateMode: AutovalidateMode.onUnfocus,
       key: _formKey,
       child: Column(
         children: [
@@ -133,22 +166,12 @@ class _SignUpContentState extends State<SignUpContent> {
             hintText: 'Confirm Password',
             textInputAction: TextInputAction.done,
             obscureText: true,
-            setError: showErrorText,
             validator: (value) {
-              if (value != passwordController.text) {
-                print('test');
-                setState(() {
-                  borderColor = Theme.of(context).colorScheme.error;
-                  showErrorText = true;
-                  isValid = false;
-                });
-                //return 'Password does not match.';
-              } else {
-                setState(() {
-                  showErrorText = false;
-                  isValid = true;
-                });
+              final bool validate = confirmPasswordValidator();
+              if (validate) {
                 return null;
+              } else {
+                return 'Password does not match';
               }
             },
             onFieldSubmitted: (value) {
@@ -160,32 +183,17 @@ class _SignUpContentState extends State<SignUpContent> {
                 }
               });
             },
+            onChanged: (value) {
+              if (value.isNotEmpty && passwordController.text.isNotEmpty) {
+                confirmPasswordValidator();
+              } else {
+                setValidation(false);
+              }
+            },
           ),
-          showErrorText ? const ErrorText() : const SizedBox(),
           const SizedBox(height: 20),
           SignUpButton(onPressed: isValid ? onContinue : null),
         ],
-      ),
-    );
-  }
-}
-
-class ErrorText extends StatelessWidget {
-  const ErrorText({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.only(top: 10.0, left: 10),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          'Password does not match.',
-          style: TextStyle(
-            color: Colors.red,
-            fontSize: 12,
-          ),
-        ),
       ),
     );
   }
@@ -201,7 +209,7 @@ class TextInputBox extends StatelessWidget {
     this.suffixIcon,
     this.validator,
     this.onFieldSubmitted,
-    this.setError = false,
+    this.onChanged,
   });
 
   final TextEditingController controller;
@@ -211,62 +219,50 @@ class TextInputBox extends StatelessWidget {
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final void Function(String)? onFieldSubmitted;
-  final bool setError;
+  final void Function(String)? onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final OutlineInputBorder errorBorder = OutlineInputBorder(
-      borderSide: BorderSide(
-        color: Theme.of(context).colorScheme.error,
-        width: 2.0,
-      ),
-      borderRadius: BorderRadius.circular(10.0),
-    );
-
-    return SizedBox(
-      height: 70,
-      child: TextFormField(
-        textInputAction: textInputAction,
-        controller: controller,
-        decoration: InputDecoration(
-          //contentPadding: const EdgeInsets.all(20),
-          isDense: false,
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: Colors.white,
-          ),
-          filled: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-          fillColor: Theme.of(context).colorScheme.surface,
-          border: setError
-              ? errorBorder
-              : OutlineInputBorder(
-                  borderSide: BorderSide.none, // No outline when not focused
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary, // Primary color outline when focused
-              width: 2.0,
-            ),
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          suffixIcon: suffixIcon,
-          errorBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.error,
-              width: 2.0,
-            ),
-            borderRadius: BorderRadius.circular(10.0),
-          ),
+    return TextFormField(
+      textInputAction: textInputAction,
+      controller: controller,
+      decoration: InputDecoration(
+        //contentPadding: const EdgeInsets.all(20),
+        isDense: false,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          color: Colors.white,
         ),
-        obscureText: obscureText,
-        validator: validator,
-        onFieldSubmitted: onFieldSubmitted,
+        filled: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        fillColor: Theme.of(context).colorScheme.surface,
+        border: OutlineInputBorder(
+          borderSide: BorderSide.none, // No outline when not focused
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Theme.of(context)
+                .colorScheme
+                .primary, // Primary color outline when focused
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        suffixIcon: suffixIcon,
+        errorBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.error,
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(10.0),
+        ),
       ),
+      obscureText: obscureText,
+      validator: validator,
+      onFieldSubmitted: onFieldSubmitted,
+      onChanged: onChanged,
     );
   }
 }

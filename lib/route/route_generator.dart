@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:quantocube/page/Homeowner/homeowner_homepage.dart';
 import 'package:quantocube/page/auth/auth_selection.dart';
@@ -12,8 +13,12 @@ class RouteGenerator {
     // Getting arguments passed in while calling Navigator.pushNamed
     final args = settings.arguments;
 
+    if (kDebugMode) {
+      print('Route: ${settings.name}');
+    }
+
     switch (settings.name) {
-      case '/':
+      case '/homeowner':
         return CupertinoPageRoute(builder: (_) => const HomeownerHomePage());
       case '/onboarding':
         return CupertinoPageRoute(builder: (_) => IntroductionPage());

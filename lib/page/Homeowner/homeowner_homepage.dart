@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantocube/page/Homeowner/find_pros.dart';
 
 class HomeownerHomePage extends StatelessWidget {
   const HomeownerHomePage({super.key});
@@ -18,7 +19,7 @@ class HomeownerHomePage extends StatelessWidget {
               const SizedBox(height: 15),
               _buildSearchBar(), // Location + Search
               const SizedBox(height: 20),
-              _buildFindProsButton(), // Find Pros button
+              _buildFindProsButton(context), // Find Pros button
               const SizedBox(height: 20),
               _buildOngoingProjects(), // Ongoing projects section
               const SizedBox(height: 20),
@@ -90,32 +91,39 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildFindProsButton() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset("assets/mascot/icons.png", height: 40), // Correct path
-          const SizedBox(width: 10),
-          const Text(
-            "Find Pros",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+  Widget _buildFindProsButton(BuildContext context) { // ✅ Accept BuildContext
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const FindProsPage()), // ✅ Navigate to FindProsPage
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset("assets/mascot/icons.png", height: 40), // ✅ Correct Path
+            const SizedBox(width: 10),
+            const Text(
+              "Find Pros",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-
   Widget _buildOngoingProjects() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

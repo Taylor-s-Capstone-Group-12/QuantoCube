@@ -2,6 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:quantocube/page/onboarding/welcome_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
+
+
+final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Initialize Firestore
 
 class PasswordSetupPage extends StatelessWidget {
   const PasswordSetupPage({
@@ -113,6 +118,18 @@ class _SignUpContentState extends State<SignUpContent> {
           email: widget.signUpData['email']!,
           password: passwordController.text,
         );
+
+        // Generate UUID
+        var uuid = Uuid();
+        String userId = uuid.v4();
+
+        // Store UUID & other data in Firestore
+        await _firestore.collection("users").doc(userCredential.user!.uid).set({
+          "uuid": userId,
+          "name": widget.signUpData['name'],
+          "email": widget.signUpData['email'],
+          "createdAt": FieldValue.serverTimestamp(),
+        });
 
         // If successful, navigate to the Welcome Page
         Navigator.push(

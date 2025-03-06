@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:quantocube/page/auth/validator.dart';
 import 'package:quantocube/page/onboarding/welcome_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PasswordSetupPage extends StatelessWidget {
   const PasswordSetupPage({
@@ -104,20 +104,38 @@ class _SignUpContentState extends State<SignUpContent> {
   }
 
   // navigate to the welcome page if the password is acceptable.
-  void onContinue() {
-    widget.signUpData['password'] = passwordController.text;
-    // TODO: Implement sign up logic here.
-    //Validator.signUp(widget.signUpData);
 
-    // For now, navigate to the welcome page.
-    Navigator.push(
-      context,
-      CupertinoPageRoute(
-        builder: (context) => WelcomePage(
-          name: widget.signUpData['name'] ?? 'User',
-        ),
-      ),
-    );
+  void onContinue() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: widget.signUpData['email']!,
+          password: passwordController.text,
+        );
+
+        // If successful, navigate to the Welcome Page
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+            builder: (context) => WelcomePage(
+              name: widget.signUpData['name'] ?? 'User',
+            ),
+          ),
+        );
+      } on FirebaseAuthException catch (e) {
+        String errorMessage = "An error occurred";
+        if (e.code == 'email-already-in-use') {
+          errorMessage = "This email is already in use.";
+        } else if (e.code == 'weak-password') {
+          errorMessage = "The password is too weak.";
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    }
   }
 
   // function to update the validation flag

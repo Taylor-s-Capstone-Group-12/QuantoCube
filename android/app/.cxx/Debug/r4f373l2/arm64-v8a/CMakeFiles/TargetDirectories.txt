@@ -1,0 +1,2 @@
+C:/Users/Ben/Documents/School/FYP/QuantoCubeFront/android/app/.cxx/Debug/r4f373l2/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/Ben/Documents/School/FYP/QuantoCubeFront/android/app/.cxx/Debug/r4f373l2/arm64-v8a/CMakeFiles/rebuild_cache.dir

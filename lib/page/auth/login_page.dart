@@ -132,7 +132,7 @@ class _LoginBoxContentState extends State<LoginBoxContent> {
           ),
         ),
         const SizedBox(height: 20),
-        LoginButton(onPressed: onLogin), // ✅ Directly calls onLogin()
+        LoginButton(onPressed: (){}), // ✅ Directly calls onLogin()
       ],
     );
   }

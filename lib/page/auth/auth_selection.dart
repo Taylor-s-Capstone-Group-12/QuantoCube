@@ -115,7 +115,10 @@ class SignUpButton extends StatelessWidget {
     );
   }
 
-  Widget _buildLoginText(BuildContext context) {
+  
+}
+
+Widget _buildLoginText(BuildContext context) {
     return Column(
       children: [
         const Text(
@@ -140,4 +143,3 @@ class SignUpButton extends StatelessWidget {
       ],
     );
   }
-}

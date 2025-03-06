@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantocube/page/Homeowner/homeowner_homepage.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:quantocube/theme.dart';
 
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: projectTheme,
-      home: IntroductionPage(), // ✅ Always starts with IntroductionPage
+      home: HomeownerHomePage(), // ✅ Always starts with IntroductionPage
     );
   }
 }

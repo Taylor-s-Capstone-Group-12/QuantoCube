@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantocube/page/Homeowner/find_pros.dart'; // ✅ Import Find Pros Page
 
 class HomeownerHomePage extends StatelessWidget {
   const HomeownerHomePage({super.key});
@@ -14,21 +15,21 @@ class HomeownerHomePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 50), // Space for status bar
-              _buildHeader(), // User greeting
+              _buildHeader(),
               const SizedBox(height: 15),
-              _buildSearchBar(), // Location + Search
+              _buildSearchBar(),
               const SizedBox(height: 20),
-              _buildFindProsButton(), // Find Pros button
+              _buildFindProsButton(context), // ✅ Pass context to function
               const SizedBox(height: 20),
-              _buildOngoingProjects(), // Ongoing projects section
+              _buildOngoingProjects(),
               const SizedBox(height: 20),
-              _buildFeaturedContractors(), // Featured contractors section
+              _buildFeaturedContractors(),
               const SizedBox(height: 80), // Space for bottom nav
             ],
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(), // Persistent navbar
+      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
@@ -56,7 +57,7 @@ class HomeownerHomePage extends StatelessWidget {
         ),
         CircleAvatar(
           radius: 22,
-          backgroundImage: AssetImage("assets/mascot/icons.png"), // Profile picture
+          backgroundImage: AssetImage("assets/mascot/icons.png"), // ✅ Correct Path
         ),
       ],
     );
@@ -89,28 +90,36 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildFindProsButton() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset("assets/mascot/icons.png", height: 40), // Correct path
-          const SizedBox(width: 10),
-          const Text(
-            "Find Pros",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+  Widget _buildFindProsButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const FindProsPage()), // ✅ Navigates to Find Pros Page
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset("assets/mascot/icons.png", height: 40), // ✅ Correct Path
+            const SizedBox(width: 10),
+            const Text(
+              "Find Pros",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -178,11 +187,11 @@ class HomeownerHomePage extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              _buildContractorCard("assets/mascot/tv_greet.png"), // Corrected path
+              _buildContractorCard("assets/mascot/tv_greet.png"), // ✅ Corrected Path
               const SizedBox(width: 10),
-              _buildContractorCard("assets/mascot/tv_smile.png"), // Corrected path
+              _buildContractorCard("assets/mascot/tv_smile.png"), // ✅ Corrected Path
               const SizedBox(width: 10),
-              _buildContractorCard("assets/mascot/tv_cone_side.png"), // Corrected path
+              _buildContractorCard("assets/mascot/tv_cone_side.png"), // ✅ Corrected Path
             ],
           ),
         ),

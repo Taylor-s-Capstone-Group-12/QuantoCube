@@ -1,9 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:quantocube/page/Homeowner/homeowner_homepage.dart';
+import 'package:quantocube/page/Homeowner/listing/contractor_profile.dart';
 import 'package:quantocube/page/auth/auth_selection.dart';
 import 'package:quantocube/page/auth/login_page.dart';
+import 'package:quantocube/page/auth/signup/Contractor/contractor_data.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:quantocube/route/error_page.dart';
@@ -37,6 +38,17 @@ class RouteGenerator {
         }
         // If args is not of the correct type, return an error page.
         return _errorRoute();
+      case '/homeowner/contractor_page':
+        // Validation of correct data type
+        if (args is ContractorData) {
+          return CupertinoPageRoute(
+            builder: (_) => ContractorProfile(
+              contractor: args,
+            ),
+          );
+        } else {
+          return _errorRoute();
+        }
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();

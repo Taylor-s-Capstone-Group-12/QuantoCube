@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:quantocube/components/button.dart';
+import 'package:quantocube/components/text_field.dart';
 import 'package:quantocube/page/onboarding/welcome_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -88,7 +90,8 @@ class SignUpContent extends StatefulWidget {
 class _SignUpContentState extends State<SignUpContent> {
   late TextEditingController passwordController;
   late TextEditingController confirmPasswordController;
-  late bool isValid;
+  late bool isPasswordValid;
+  late bool isFormValid;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -96,7 +99,8 @@ class _SignUpContentState extends State<SignUpContent> {
   void initState() {
     passwordController = TextEditingController();
     confirmPasswordController = TextEditingController();
-    isValid = false;
+    isFormValid = false;
+    isPasswordValid = false;
     super.initState();
   }
 
@@ -108,7 +112,6 @@ class _SignUpContentState extends State<SignUpContent> {
   }
 
   // navigate to the welcome page if the password is acceptable.
-
   void onContinue() async {
     if (_formKey.currentState!.validate()) {
       try {
@@ -159,14 +162,24 @@ class _SignUpContentState extends State<SignUpContent> {
   // function to update the validation flag
   void setValidation(bool status) {
     setState(() {
-      isValid = status;
+      isFormValid = status;
     });
   }
 
   // function to validate the password
-  bool passwordValidator() {
-    // TODO: Implement password validation
-    return true;
+  bool passwordValidator(String password) {
+    // check if the password is at least 8 characters long,
+    // contains at least one uppercase letter,
+    // one lowercase letter, one number,
+    // and one special character
+    if (password.isEmpty) {
+      setValidation(false);
+      return true;
+    }
+
+    final RegExp regex = RegExp(
+        r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,4096}$');
+    return regex.hasMatch(password);
   }
 
   // function to validate the confirm password
@@ -195,6 +208,23 @@ class _SignUpContentState extends State<SignUpContent> {
             controller: passwordController,
             hintText: 'Password',
             obscureText: true,
+            validator: (value) {
+              final bool validate = passwordValidator(value ?? '');
+              if (validate) {
+                return null;
+              } else {
+                return '• Password must be at least 8 characters long\n• at least one uppercase letter \n• one lowercase letter,\n• one number,\n• one special character';
+              }
+            },
+            onChanged: (value) {
+              if (value.isNotEmpty) {
+                passwordValidator(value)
+                    ? setValidation(confirmPasswordValidator())
+                    : setValidation(false);
+              } else {
+                setValidation(false);
+              }
+            },
           ),
           const SizedBox(height: 20),
           TextInputBox(
@@ -204,6 +234,9 @@ class _SignUpContentState extends State<SignUpContent> {
             obscureText: true,
             validator: (value) {
               final bool validate = confirmPasswordValidator();
+              if (value == null || value.isEmpty) {
+                return null;
+              }
               if (validate) {
                 return null;
               } else {
@@ -211,13 +244,11 @@ class _SignUpContentState extends State<SignUpContent> {
               }
             },
             onFieldSubmitted: (value) {
-              setState(() {
-                if (_formKey.currentState!.validate()) {
-                  isValid = true;
-                } else {
-                  isValid = false;
-                }
-              });
+              if (_formKey.currentState!.validate()) {
+                setValidation(true);
+              } else {
+                setValidation(false);
+              }
             },
             onChanged: (value) {
               if (value.isNotEmpty && passwordController.text.isNotEmpty) {
@@ -228,111 +259,9 @@ class _SignUpContentState extends State<SignUpContent> {
             },
           ),
           const SizedBox(height: 20),
-          SignUpButton(onPressed: isValid ? onContinue : null),
+          LargeOrangeButton.onlyText(context,
+              onPressed: isFormValid ? onContinue : null, text: 'Continue'),
         ],
-      ),
-    );
-  }
-}
-
-class TextInputBox extends StatelessWidget {
-  const TextInputBox({
-    super.key,
-    required this.controller,
-    required this.hintText,
-    this.obscureText = false, // default to false
-    this.textInputAction = TextInputAction.next, // default to next
-    this.suffixIcon,
-    this.validator,
-    this.onFieldSubmitted,
-    this.onChanged,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final bool obscureText;
-  final TextInputAction textInputAction;
-  final Widget? suffixIcon;
-  final String? Function(String?)? validator;
-  final void Function(String)? onFieldSubmitted;
-  final void Function(String)? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      textInputAction: textInputAction,
-      controller: controller,
-      decoration: InputDecoration(
-        //contentPadding: const EdgeInsets.all(20),
-        isDense: false,
-        hintText: hintText,
-        hintStyle: const TextStyle(
-          color: Colors.white,
-        ),
-        filled: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        fillColor: Theme.of(context).colorScheme.surface,
-        border: OutlineInputBorder(
-          borderSide: BorderSide.none, // No outline when not focused
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-            color: Theme.of(context)
-                .colorScheme
-                .primary, // Primary color outline when focused
-            width: 2.0,
-          ),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        suffixIcon: suffixIcon,
-        errorBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.error,
-            width: 2.0,
-          ),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-      ),
-      obscureText: obscureText,
-      validator: validator,
-      onFieldSubmitted: onFieldSubmitted,
-      onChanged: onChanged,
-    );
-  }
-}
-
-class SignUpButton extends StatelessWidget {
-  const SignUpButton({
-    super.key,
-    required this.onPressed,
-  });
-
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 70,
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-        ),
-        child: const Text(
-          'Continue',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: Colors.white,
-          ),
-        ),
       ),
     );
   }

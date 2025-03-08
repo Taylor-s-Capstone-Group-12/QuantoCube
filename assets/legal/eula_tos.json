@@ -1,0 +1,49 @@
+{
+  "title": "End User License Agreement and Terms of Service",
+  "sections": [
+    {
+      "header": "Introduction",
+      "body": "Welcome to Quantocube. This Agreement governs your use of Quantocube, a platform for contractor hiring, messaging, negotiation, and quotation services based on location. By using the App, you agree to these Terms of Service and End User License Agreement (EULA). If you do not agree, please discontinue use immediately."
+    },
+    {
+      "header": "License Grant",
+      "body": "We grant you a limited, non-exclusive, non-transferable, revocable license to use Quantocube solely for its intended purpose. You may not modify, distribute, sell, or sublicense the app."
+    },
+    {
+      "header": "User Accounts and Responsibilities",
+      "body": "You must provide accurate and complete information when creating an account. You are responsible for all activities under your account. You agree not to use Quantocube for any illegal, fraudulent, or abusive purposes. We reserve the right to suspend or terminate accounts that violate this Agreement or engage in unauthorized activity."
+    },
+    {
+      "header": "Contractor and User Interactions",
+      "body": "Quantocube provides a platform for connecting users with contractors; we do not endorse, verify, or guarantee the quality of contractors or their services. All agreements, negotiations, and transactions are between users and contractors. We are not a party to any contract between you and a contractor. We are not responsible for disputes, damages, or losses arising from engagements with contractors."
+    },
+    {
+      "header": "Payments and Fees",
+      "body": "If payments are processed through Quantocube, you agree to comply with our payment processing policies. Fees and charges may apply for certain services, and we reserve the right to modify pricing."
+    },
+    {
+      "header": "Data Collection and Privacy",
+      "body": "By using Quantocube, you consent to the collection and processing of the following data for analytics and service improvement: Personal Information (Name, email, phone number, profile details), Location Data (To provide location-based contractor matching), Usage Data (App interactions, features used, and preferences), Communication Data (Messages, negotiations, and quotations exchanged within the app). We comply with applicable privacy laws and take measures to protect your data. For more details, please refer to our Privacy Policy."
+    },
+    {
+      "header": "Liability Disclaimer",
+      "body": "Quantocube is provided 'as is' without warranties of any kind. We do not guarantee the availability, accuracy, or reliability of the app. We are not liable for damages, losses, or disputes arising from your use of the app. You assume all risks associated with using the app, including hiring contractors."
+    },
+    {
+      "header": "Account Termination",
+      "body": "We reserve the right to suspend or terminate any account that: Violates these Terms of Service, Engages in fraudulent, illegal, or abusive behavior, Attempts to manipulate or misuse the app. Termination may result in loss of access to your data and services."
+    },
+    {
+      "header": "Changes to This Agreement",
+      "body": "We may update this Agreement from time to time. Continued use of Quantocube after changes means you accept the new terms."
+    },
+    {
+      "header": "Governing Law",
+      "body": "This Agreement shall be governed by the laws of Malaysia. Any disputes shall be resolved in the courts of Malaysia."
+    },
+    {
+      "header": "Contact Information",
+      "body": "For any questions regarding this Agreement, please contact us at customersupport@quantocube.com. By using the app, you acknowledge that you have read, understood, and agree to these Terms of Service and EULA."
+    }
+  ]
+}

@@ -27,7 +27,10 @@ class WelcomePage extends StatelessWidget {
             const Spacer(),
             Button(
               onPressed: () {
-                Navigator.pushNamed(context, '/homeowner');
+                // Remove all previous routes so the user
+                // can't go back to the welcome page.
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/homeowner', (route) => false);
               },
             ),
           ],

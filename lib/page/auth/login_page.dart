@@ -1,9 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:quantocube/components/button.dart';
+import 'package:quantocube/components/buttons/large_orange_button.dart';
 import 'package:quantocube/components/text_field.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -86,37 +85,9 @@ class _LoginBoxContentState extends State<LoginBoxContent> {
     super.dispose();
   }
 
-  void onLogin(String email, String password) async {
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password')),
-      );
-      return;
-    }
-
-    try {
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // Navigate to the homeowner screen on successful login
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushNamed(context, '/homeowner');
-      });
-    } on FirebaseAuthException catch (e) {
-      String errorMessage = 'An error occurred. Please try again.';
-
-      if (e.code == 'user-not-found') {
-        errorMessage = 'No user found for that email.';
-      } else if (e.code == 'wrong-password') {
-        errorMessage = 'Wrong password provided for that user.';
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
-    }
+  bool onLogin(String email, String password) {
+    // TODO: Implement login logic here
+    return true;
   }
 
   void onForgetPassword() {

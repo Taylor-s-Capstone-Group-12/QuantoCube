@@ -43,15 +43,16 @@ class ErrorPage extends StatelessWidget {
                   height: 20,
                 ),
                 ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.arrow_back),
-                        SizedBox(width: 10),
-                        Text('Go back'),
-                      ],
-                    )),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_back),
+                      SizedBox(width: 10),
+                      Text('Go back'),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

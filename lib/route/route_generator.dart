@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:quantocube/page/Homeowner/homeowner_homepage.dart';
-import 'package:quantocube/page/Homeowner/listing/contractor_profile.dart';
+import 'package:quantocube/page/homeowner/homeowner_homepage.dart';
+import 'package:quantocube/page/homeowner/listing/contractor_profile.dart';
 import 'package:quantocube/page/auth/auth_selection.dart';
 import 'package:quantocube/page/auth/login_page.dart';
-import 'package:quantocube/page/auth/signup/Contractor/contractor_data.dart';
+import 'package:quantocube/contractor/contractor_data.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:quantocube/route/error_page.dart';
@@ -42,9 +42,7 @@ class RouteGenerator {
         // Validation of correct data type
         if (args is ContractorData) {
           return CupertinoPageRoute(
-            builder: (_) => ContractorProfile(
-              contractor: args,
-            ),
+            builder: (_) => ContractorProfile(),
           );
         } else {
           return _errorRoute();

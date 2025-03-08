@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:quantocube/page/onboarding/welcome_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uuid/uuid.dart';
 
-
-final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Initialize Firestore
+final FirebaseFirestore _firestore =
+    FirebaseFirestore.instance; // Initialize Firestore
 
 class PasswordSetupPage extends StatelessWidget {
   const PasswordSetupPage({
@@ -113,25 +112,26 @@ class _SignUpContentState extends State<SignUpContent> {
   void onContinue() async {
     if (_formKey.currentState!.validate()) {
       try {
+        // Create user with Firebase Authentication
         UserCredential userCredential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: widget.signUpData['email']!,
           password: passwordController.text,
         );
 
-        // Generate UUID
-        var uuid = Uuid();
-        String userId = uuid.v4();
+        // Ensure user is not null before storing in Firestore
+        if (userCredential.user != null) {
+          await _firestore
+              .collection("users")
+              .doc(userCredential.user!.uid)
+              .set({
+            "name": widget.signUpData['name'],
+            "email": widget.signUpData['email'],
+            "createdAt": FieldValue.serverTimestamp(),
+          });
+        }
 
-        // Store UUID & other data in Firestore
-        await _firestore.collection("users").doc(userCredential.user!.uid).set({
-          "uuid": userId,
-          "name": widget.signUpData['name'],
-          "email": widget.signUpData['email'],
-          "createdAt": FieldValue.serverTimestamp(),
-        });
-
-        // If successful, navigate to the Welcome Page
+        // Navigate to the Welcome Page
         Navigator.push(
           context,
           CupertinoPageRoute(
@@ -142,6 +142,7 @@ class _SignUpContentState extends State<SignUpContent> {
         );
       } on FirebaseAuthException catch (e) {
         String errorMessage = "An error occurred";
+
         if (e.code == 'email-already-in-use') {
           errorMessage = "This email is already in use.";
         } else if (e.code == 'weak-password') {

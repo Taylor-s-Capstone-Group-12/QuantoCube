@@ -32,9 +32,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: projectTheme,
-      home: const SignUpAddressPage(
-        signUpData: {},
-      ),
+      home: const SplashScreen(),
       navigatorObservers: [
         KeyboardDismissNavigatorObserver(),
       ],

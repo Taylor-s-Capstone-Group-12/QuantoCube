@@ -1,8 +1,17 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:quantocube/components/buttons/large_orange_button.dart';
 import 'package:quantocube/components/text_field.dart';
+import 'package:quantocube/page/onboarding/welcome_page.dart';
+import 'package:quantocube/tests/test_func.dart';
+import 'package:uuid/uuid.dart';
 
-class SignUpAddressPage extends StatelessWidget {
+final FirebaseFirestore _firestore =
+    FirebaseFirestore.instance; // Initialize Firestore
+
+class SignUpAddressPage extends StatefulWidget {
   const SignUpAddressPage({
     super.key,
     required this.signUpData,
@@ -11,33 +20,75 @@ class SignUpAddressPage extends StatelessWidget {
   final Map<String, String> signUpData;
 
   @override
+  State<SignUpAddressPage> createState() => _SignUpAddressPageState();
+}
+
+class _SignUpAddressPageState extends State<SignUpAddressPage> {
+  bool isLoading = false;
+
+  void loadingState(bool state) {
+    setState(() {
+      isLoading = state;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.only(top: 100.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 30.0, vertical: 35),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Add Address',
-                    style: TextStyle(
-                      fontSize: 30,
-                      height: 1.2,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 100.0),
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Column(
+                children: [
+                  const Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 30.0, vertical: 35),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Add Address',
+                        style: TextStyle(
+                          fontSize: 30,
+                          height: 1.2,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  AddressBox(
+                    signUpData: widget.signUpData,
+                    loadingState: loadingState,
+                  ),
+                ],
               ),
-              AddressBox(
-                signUpData: signUpData,
-              ),
-            ],
+            ),
           ),
+          if (isLoading) const LoadingScreen(),
+        ],
+      ),
+    );
+  }
+}
+
+class LoadingScreen extends StatefulWidget {
+  const LoadingScreen({super.key});
+
+  @override
+  State<LoadingScreen> createState() => _LoadingScreenState();
+}
+
+class _LoadingScreenState extends State<LoadingScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withAlpha(100),
+        child: const Center(
+          child: CircularProgressIndicator(),
         ),
       ),
     );
@@ -48,9 +99,11 @@ class AddressBox extends StatelessWidget {
   const AddressBox({
     super.key,
     required this.signUpData,
+    required this.loadingState,
   });
 
   final Map<String, String> signUpData;
+  final Function(bool) loadingState;
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +115,9 @@ class AddressBox extends StatelessWidget {
           topLeft: Radius.circular(40),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 30),
-      child: SignUpAddressContent(signUpData: signUpData),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 45),
+      child: SignUpAddressContent(
+          signUpData: signUpData, loadingState: loadingState),
     );
   }
 }
@@ -72,9 +126,11 @@ class SignUpAddressContent extends StatefulWidget {
   const SignUpAddressContent({
     super.key,
     required this.signUpData,
+    required this.loadingState,
   });
 
   final Map<String, String> signUpData;
+  final Function(bool) loadingState;
 
   @override
   State<SignUpAddressContent> createState() => _SignUpAddressContentState();
@@ -94,7 +150,7 @@ class _SignUpAddressContentState extends State<SignUpAddressContent> {
   final Map<String, String> fieldTexts = {
     'Phone Number': 'e.g. (0123456789)',
     'Apartment/Suite/Unit': 'e.g. (A-1-1)',
-    'street Address': 'e.g. (Jalan SS 2/75)',
+    'Street Address': 'e.g. (Jalan SS 2/75)',
     'City': 'e.g. (Petaling Jaya)',
     'State': 'e.g. (Selangor)',
     'ZIP Code': 'e.g. (43000)',
@@ -107,9 +163,14 @@ class _SignUpAddressContentState extends State<SignUpAddressContent> {
   /// Additionally, set the [_isValid] flag to false
   @override
   void initState() {
+    // Create a controller for each field in the address data, and add a listener
+    // to validate the form.
     for (int index = 0; index < _addressData.keys.length; index++) {
-      _controllers.add(TextEditingController());
+      final textController = TextEditingController();
+      textController.addListener(formListener);
+      _controllers.add(textController);
     }
+
     _isValid = false;
 
     super.initState();
@@ -123,6 +184,18 @@ class _SignUpAddressContentState extends State<SignUpAddressContent> {
     super.dispose();
   }
 
+  void formListener() {
+    setState(() {
+      for (final controller in _controllers) {
+        if (controller.text.isEmpty) {
+          _isValid = false;
+          return;
+        }
+      }
+      _isValid = true;
+    });
+  }
+
   String camelToTitle(String text) {
     return text[0].toUpperCase() +
         text.substring(1).splitMapJoin(
@@ -132,52 +205,108 @@ class _SignUpAddressContentState extends State<SignUpAddressContent> {
             );
   }
 
+  void onContinue() async {
+    if (_isValid) {
+      try {
+        widget.loadingState(true);
+        UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: widget.signUpData['email']!,
+          password: widget.signUpData['password']!,
+        );
+
+        // Generate UUID
+        var uuid = const Uuid();
+        String userId = uuid.v4();
+
+        reviewMap(widget.signUpData);
+
+        // Store UUID & other data in Firestore
+        await _firestore.collection("users").doc(userCredential.user!.uid).set({
+          "uuid": userId,
+          "name": widget.signUpData['name'],
+          "email": widget.signUpData['email'],
+          "createdAt": FieldValue.serverTimestamp(),
+          "address": _addressData,
+        });
+
+        // If successful, navigate to the Welcome Page
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            CupertinoPageRoute(
+              builder: (context) => WelcomePage(
+                name: widget.signUpData['name'] ?? 'User',
+              ),
+            ),
+            (Route<dynamic> route) => false,
+          );
+        }
+      } on FirebaseAuthException catch (e) {
+        widget.loadingState(false);
+        String errorMessage = "An error occurred";
+        if (e.code == 'email-already-in-use') {
+          errorMessage = "This email is already in use.";
+        } else if (e.code == 'weak-password') {
+          errorMessage = "The password is too weak.";
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessage)),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Form(
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: ListView.builder(
-              itemCount: _addressData.keys.length,
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemBuilder: (context, index) {
-                final String hintText =
-                    camelToTitle(_addressData.keys.elementAt(index));
+        Column(
+          children: List.generate(
+            _addressData.keys.length,
+            (index) {
+              final String hintText = fieldTexts.keys.elementAt(index);
 
-                return TextInputSection(
-                  titleText: hintText,
-                  child: TextInputBox(
-                    controller: _controllers[index],
-                    hintText: '',
-                    textInputAction: index == _addressData.keys.length - 1
-                        ? TextInputAction.done
-                        : TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a valid $hintText';
-                      }
-                    },
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    onChanged: (value) {
-                      _addressData[_addressData.keys.elementAt(index)] = value;
-                      //_isValid = Form.of(context).validate();
-                    },
-                    onFieldSubmitted: (value) {
-                      //_isValid = Form.of(context).validate();
-                    },
-                  ),
-                );
-              }),
+              return TextInputSection(
+                titleText: hintText,
+                child: TextInputBox(
+                  controller: _controllers[index],
+                  keyboardType: ['phone number', 'zip code']
+                          .contains(hintText.toLowerCase())
+                      ? TextInputType.phone
+                      : TextInputType.text,
+                  hintText: fieldTexts[hintText] ?? '',
+                  textInputAction: index == _addressData.keys.length - 1
+                      ? TextInputAction.done
+                      : TextInputAction.next,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a valid $hintText';
+                    } else {
+                      return null;
+                    }
+                  },
+                  autovalidateMode: AutovalidateMode.onUnfocus,
+                  onChanged: (value) {
+                    _addressData[_addressData.keys.elementAt(index)] = value;
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(
+          height: 20,
         ),
         LargeOrangeButton.onlyText(
           context,
-          onPressed: () {},
+          onPressed: _isValid ? onContinue : null,
           text: 'Continue',
         ),
         const SizedBox(
-          height: 50,
+          height: 20,
         )
       ],
     );

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:quantocube/components/buttons/large_orange_button.dart';
 import 'package:quantocube/components/text_field.dart';
+import 'package:quantocube/page/auth/signup/signup_address_page.dart';
 import 'package:quantocube/page/onboarding/welcome_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -115,47 +116,16 @@ class _SignUpContentState extends State<SignUpContent> {
   }
 
   // navigate to the welcome page if the password is acceptable.
-  void onContinue() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        UserCredential userCredential =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: widget.signUpData['email']!,
-          password: passwordController.text,
-        );
-
-        // Generate UUID
-        var uuid = const Uuid();
-        String userId = uuid.v4();
-
-        // Store UUID & other data in Firestore
-        await _firestore.collection("users").doc(userCredential.user!.uid).set({
-          "uuid": userId,
-          "name": widget.signUpData['name'],
-          "email": widget.signUpData['email'],
-          "createdAt": FieldValue.serverTimestamp(),
-        });
-
-        // If successful, navigate to the Welcome Page
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (context) => WelcomePage(
-              name: widget.signUpData['name'] ?? 'User',
-            ),
+  void onContinue() {
+    if (isFormValid) {
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (context) => SignUpAddressPage(
+            signUpData: widget.signUpData,
           ),
-        );
-      } on FirebaseAuthException catch (e) {
-        String errorMessage = "An error occurred";
-        if (e.code == 'email-already-in-use') {
-          errorMessage = "This email is already in use.";
-        } else if (e.code == 'weak-password') {
-          errorMessage = "The password is too weak.";
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
-      }
+        ),
+      );
     }
   }
 
@@ -217,6 +187,7 @@ class _SignUpContentState extends State<SignUpContent> {
               }
             },
             onChanged: (value) {
+              widget.signUpData['password'] = value;
               if (value.isNotEmpty) {
                 passwordValidator(value)
                     ? setValidation(confirmPasswordValidator())

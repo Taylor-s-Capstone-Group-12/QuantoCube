@@ -12,6 +12,7 @@ class TextInputBox extends StatelessWidget {
     this.onFieldSubmitted,
     this.onChanged,
     this.autovalidateMode,
+    this.keyboardType,
   });
 
   final TextEditingController controller;
@@ -23,6 +24,7 @@ class TextInputBox extends StatelessWidget {
   final void Function(String)? onFieldSubmitted;
   final void Function(String)? onChanged;
   final AutovalidateMode? autovalidateMode;
+  final TextInputType? keyboardType;
 
   @override
   Widget build(BuildContext context) {
@@ -30,12 +32,13 @@ class TextInputBox extends StatelessWidget {
       textInputAction: textInputAction,
       controller: controller,
       autovalidateMode: autovalidateMode,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         //contentPadding: const EdgeInsets.all(20),
         isDense: false,
         hintText: hintText,
-        hintStyle: const TextStyle(
-          color: Colors.white,
+        hintStyle: TextStyle(
+          color: Colors.grey[500],
         ),
         filled: true,
         contentPadding:

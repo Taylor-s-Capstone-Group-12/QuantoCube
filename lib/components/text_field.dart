@@ -11,6 +11,7 @@ class TextInputBox extends StatelessWidget {
     this.validator,
     this.onFieldSubmitted,
     this.onChanged,
+    this.autovalidateMode,
   });
 
   final TextEditingController controller;
@@ -21,12 +22,14 @@ class TextInputBox extends StatelessWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onFieldSubmitted;
   final void Function(String)? onChanged;
+  final AutovalidateMode? autovalidateMode;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       textInputAction: textInputAction,
       controller: controller,
+      autovalidateMode: autovalidateMode,
       decoration: InputDecoration(
         //contentPadding: const EdgeInsets.all(20),
         isDense: false,

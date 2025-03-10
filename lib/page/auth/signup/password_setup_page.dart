@@ -42,7 +42,7 @@ class PasswordSetupPage extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: SignUpBox(
+              child: PasswordBox(
                 signUpData: signUpData,
               ),
             ),
@@ -53,8 +53,8 @@ class PasswordSetupPage extends StatelessWidget {
   }
 }
 
-class SignUpBox extends StatelessWidget {
-  const SignUpBox({
+class PasswordBox extends StatelessWidget {
+  const PasswordBox({
     super.key,
     required this.signUpData,
   });

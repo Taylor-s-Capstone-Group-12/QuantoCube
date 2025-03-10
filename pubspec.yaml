@@ -115,6 +115,7 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
+# for generating the app icon
 flutter_launcher_icons:
   image_path: "assets/icons/logo_orange.png"
   android: true

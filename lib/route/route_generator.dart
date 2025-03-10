@@ -4,7 +4,7 @@ import 'package:quantocube/page/homeowner/homeowner_homepage.dart';
 import 'package:quantocube/page/homeowner/listing/contractor_profile.dart';
 import 'package:quantocube/page/auth/auth_selection.dart';
 import 'package:quantocube/page/auth/login_page.dart';
-import 'package:quantocube/contractor/contractor_data.dart';
+import 'package:quantocube/data/contractor/contractor_data.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:quantocube/route/error_page.dart';

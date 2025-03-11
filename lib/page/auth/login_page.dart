@@ -1,5 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:quantocube/components/buttons/large_orange_button.dart';
+import 'package:quantocube/components/loading_overlay.dart';
+import 'package:quantocube/components/text_field.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
 
 class LoginPage extends StatelessWidget {
@@ -9,29 +13,31 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       resizeToAvoidBottomInset: false,
-      body: Padding(
-        padding: EdgeInsets.only(top: 100.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30.0, vertical: 35),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Log In',
-                  style: TextStyle(
-                    fontSize: 30,
-                    height: 1.2,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+      body: LoadingOverlay(
+        child: Padding(
+          padding: EdgeInsets.only(top: 100.0),
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 30.0, vertical: 35),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Log In',
+                    style: TextStyle(
+                      fontSize: 30,
+                      height: 1.2,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: LoginBox(),
-            ),
-          ],
+              Expanded(
+                child: LoginBox(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -83,9 +89,45 @@ class _LoginBoxContentState extends State<LoginBoxContent> {
     super.dispose();
   }
 
-  bool onLogin(String email, String password) {
-    // TODO: Implement login logic here
-    return true;
+  void onLogin(String email, String password) async {
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password')),
+      );
+      return;
+    }
+
+    final overlay = LoadingOverlay.of(context);
+
+    try {
+      overlay.show();
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Navigate to the homeowner screen on successful login
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/homeowner',
+          (Route<dynamic> route) => false,
+        );
+      });
+    } on FirebaseAuthException catch (e) {
+      overlay.hide();
+      String errorMessage = 'An error occurred. Please try again.';
+
+      if (e.code == 'user-not-found') {
+        errorMessage = 'No user found for that email.';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = 'Wrong password provided for that user.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    }
   }
 
   void onForgetPassword() {
@@ -131,7 +173,9 @@ class _LoginBoxContentState extends State<LoginBoxContent> {
           ),
         ),
         const SizedBox(height: 20),
-        LoginButton(
+        LargeOrangeButton.onlyText(
+          context,
+          text: 'Log In',
           onPressed: () =>
               onLogin(emailController.text, passwordController.text),
         ),
@@ -139,96 +183,6 @@ class _LoginBoxContentState extends State<LoginBoxContent> {
         AdditionalButtons(
             onForgetPassword: onForgetPassword, onSignUp: onSignUp)
       ],
-    );
-  }
-}
-
-class TextInputBox extends StatelessWidget {
-  const TextInputBox({
-    super.key,
-    required this.controller,
-    required this.hintText,
-    this.obscureText = false, // default to false
-    this.textInputAction = TextInputAction.next, // default to next
-    this.suffixIcon,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final bool obscureText;
-  final TextInputAction textInputAction;
-  final Widget? suffixIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 70,
-      child: TextFormField(
-        textInputAction: textInputAction,
-        controller: controller,
-        decoration: InputDecoration(
-          //contentPadding: const EdgeInsets.all(20),
-          isDense: false,
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: Colors.white,
-          ),
-          filled: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-          fillColor: Theme.of(context).colorScheme.surface,
-          border: OutlineInputBorder(
-            borderSide: BorderSide.none, // No outline when not focused
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary, // Primary color outline when focused
-              width: 2.0,
-            ),
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          suffixIcon: suffixIcon,
-        ),
-        obscureText: obscureText,
-      ),
-    );
-  }
-}
-
-class LoginButton extends StatelessWidget {
-  const LoginButton({
-    super.key,
-    required this.onPressed,
-  });
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 70,
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-        ),
-        child: const Text(
-          'Enter',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: Colors.white,
-          ),
-        ),
-      ),
     );
   }
 }

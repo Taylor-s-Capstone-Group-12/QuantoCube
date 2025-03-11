@@ -1,4 +1,14 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:quantocube/components/buttons/large_orange_button.dart';
+import 'package:quantocube/components/text_field.dart';
+import 'package:quantocube/page/auth/signup/signup_address_page.dart';
+import 'package:quantocube/page/onboarding/welcome_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+final FirebaseFirestore _firestore =
+    FirebaseFirestore.instance; // Initialize Firestore
 
 class PasswordSetupPage extends StatelessWidget {
   const PasswordSetupPage({
@@ -32,7 +42,7 @@ class PasswordSetupPage extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: SignUpBox(
+              child: PasswordBox(
                 signUpData: signUpData,
               ),
             ),
@@ -43,8 +53,8 @@ class PasswordSetupPage extends StatelessWidget {
   }
 }
 
-class SignUpBox extends StatelessWidget {
-  const SignUpBox({
+class PasswordBox extends StatelessWidget {
+  const PasswordBox({
     super.key,
     required this.signUpData,
   });
@@ -81,15 +91,19 @@ class SignUpContent extends StatefulWidget {
 class _SignUpContentState extends State<SignUpContent> {
   late TextEditingController passwordController;
   late TextEditingController confirmPasswordController;
-  late bool isValid;
+  late bool isPasswordValid;
+  late bool isFormValid;
+
+  final _formKey = GlobalKey<FormState>();
+
+  bool passwordObscure = true;
 
   @override
   void initState() {
     passwordController = TextEditingController();
     confirmPasswordController = TextEditingController();
-    passwordController.addListener(_onTextChanged);
-    confirmPasswordController.addListener(_onTextChanged);
-    isValid = false;
+    isFormValid = false;
+    isPasswordValid = false;
     super.initState();
   }
 
@@ -100,163 +114,136 @@ class _SignUpContentState extends State<SignUpContent> {
     super.dispose();
   }
 
-  void _onTextChanged() {
-    setState(() {});
-  }
-
-  void passwordValidator() {
-    // TODO: Implement sign up logic here
-  }
-
+  // navigate to the welcome page if the password is acceptable.
   void onContinue() {
-    // TODO: Implement sign up logic here
+    if (isFormValid) {
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (context) => SignUpAddressPage(
+            signUpData: widget.signUpData,
+          ),
+        ),
+      );
+    }
+  }
+
+  // function to update the validation flag
+  void setValidation(bool status) {
+    setState(() {
+      isFormValid = status;
+    });
+  }
+
+  // function to validate the password
+  bool passwordValidator(String password) {
+    // check if the password is at least 8 characters long,
+    // contains at least one uppercase letter,
+    // one lowercase letter, one number,
+    // and one special character
+    if (password.isEmpty) {
+      setValidation(false);
+      return true;
+    }
+
+    final RegExp regex = RegExp(
+        r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,4096}$');
+    return regex.hasMatch(password);
+  }
+
+  // function to validate the confirm password
+  bool confirmPasswordValidator() {
+    if (passwordController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty) {
+      setValidation(false);
+      return false;
+    } else if (passwordController.text != confirmPasswordController.text) {
+      setValidation(false);
+      return false;
+    } else {
+      setValidation(true);
+      return true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TextInputBox(
-          controller: passwordController,
-          hintText: 'Password',
-          obscureText: true,
-        ),
-        const SizedBox(height: 20),
-        TextInputBox(
-          controller: confirmPasswordController,
-          hintText: 'Confirm Password',
-          textInputAction: TextInputAction.done,
-          obscureText: true,
-        ),
-        const SizedBox(height: 20),
-        SignUpButton(onPressed: isValid ? onContinue : null),
-      ],
-    );
-  }
-}
-
-class TextInputBox extends StatelessWidget {
-  const TextInputBox({
-    super.key,
-    required this.controller,
-    required this.hintText,
-    this.obscureText = false, // default to false
-    this.textInputAction = TextInputAction.next, // default to next
-    this.suffixIcon,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final bool obscureText;
-  final TextInputAction textInputAction;
-  final Widget? suffixIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 70,
-      child: TextFormField(
-        textInputAction: textInputAction,
-        controller: controller,
-        decoration: InputDecoration(
-          //contentPadding: const EdgeInsets.all(20),
-          isDense: false,
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: Colors.white,
-          ),
-          filled: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-          fillColor: Theme.of(context).colorScheme.surface,
-          border: OutlineInputBorder(
-            borderSide: BorderSide.none, // No outline when not focused
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary, // Primary color outline when focused
-              width: 2.0,
+    return Form(
+      autovalidateMode: AutovalidateMode.onUnfocus,
+      key: _formKey,
+      child: Column(
+        children: [
+          TextInputBox(
+            controller: passwordController,
+            hintText: 'Password',
+            obscureText: passwordObscure,
+            validator: (value) {
+              final bool validate = passwordValidator(value ?? '');
+              if (validate) {
+                return null;
+              } else {
+                return '• Password must be at least 8 characters long\n• at least one uppercase letter \n• one lowercase letter,\n• one number,\n• one special character';
+              }
+            },
+            onChanged: (value) {
+              widget.signUpData['password'] = value;
+              if (value.isNotEmpty) {
+                passwordValidator(value)
+                    ? setValidation(confirmPasswordValidator())
+                    : setValidation(false);
+              } else {
+                setValidation(false);
+              }
+            },
+            suffixIcon: GestureDetector(
+              onTap: () {
+                setState(() {
+                  passwordObscure = !passwordObscure;
+                });
+              },
+              child: Icon(
+                passwordObscure ? Icons.visibility : Icons.visibility_off,
+                color: Colors.white,
+              ),
             ),
-            borderRadius: BorderRadius.circular(10.0),
           ),
-          suffixIcon: suffixIcon,
-        ),
-        obscureText: obscureText,
+          const SizedBox(height: 20),
+          TextInputBox(
+            controller: confirmPasswordController,
+            hintText: 'Confirm Password',
+            textInputAction: TextInputAction.done,
+            obscureText: true,
+            validator: (value) {
+              final bool validate = confirmPasswordValidator();
+              if (value == null || value.isEmpty) {
+                return null;
+              }
+              if (validate) {
+                return null;
+              } else {
+                return 'Password does not match';
+              }
+            },
+            onFieldSubmitted: (value) {
+              if (_formKey.currentState!.validate()) {
+                setValidation(true);
+              } else {
+                setValidation(false);
+              }
+            },
+            onChanged: (value) {
+              if (value.isNotEmpty && passwordController.text.isNotEmpty) {
+                confirmPasswordValidator();
+              } else {
+                setValidation(false);
+              }
+            },
+          ),
+          const SizedBox(height: 20),
+          LargeOrangeButton.onlyText(context,
+              onPressed: isFormValid ? onContinue : null, text: 'Continue'),
+        ],
       ),
-    );
-  }
-}
-
-class SignUpButton extends StatelessWidget {
-  const SignUpButton({
-    super.key,
-    required this.onPressed,
-  });
-
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 70,
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-        ),
-        child: const Text(
-          'Continue',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class MarketingCheckbox extends StatelessWidget {
-  const MarketingCheckbox({
-    super.key,
-    required this.receiveNewsletters,
-    required this.onChange,
-  });
-
-  final bool receiveNewsletters;
-  final VoidCallback onChange;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Checkbox(
-          value: receiveNewsletters,
-          onChanged: (value) {
-            onChange();
-          },
-          activeColor: Theme.of(context).colorScheme.primary,
-          checkColor:
-              receiveNewsletters ? Colors.white : const Color(0xFF979797),
-        ),
-        const Text(
-          'I want to receive the latest news, updates, and\nexclusive offers from QuantoCube!',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF979797),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:quantocube/page/auth/signup/password_setup_page.dart';
+import 'package:quantocube/components/buttons/large_orange_button.dart';
+import 'package:quantocube/components/text_field.dart';
+import 'package:quantocube/page/homeowner/legal/eula_tos_page.dart';
+import 'package:quantocube/page/auth/signup/name_setup_page.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({
@@ -12,13 +15,13 @@ class SignUpPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Padding(
-        padding: EdgeInsets.only(top: 100.0),
+        padding: const EdgeInsets.only(top: 100.0),
         child: Column(
           children: [
-            Padding(
+            const Padding(
               padding: EdgeInsets.symmetric(horizontal: 30.0, vertical: 35),
               child: Align(
                 alignment: Alignment.centerLeft,
@@ -34,7 +37,9 @@ class SignUpPage extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: SignUpBox(),
+              child: SignUpBox(
+                isHomeowner: isHomeowner,
+              ),
             ),
           ],
         ),
@@ -44,7 +49,9 @@ class SignUpPage extends StatelessWidget {
 }
 
 class SignUpBox extends StatelessWidget {
-  const SignUpBox({super.key});
+  const SignUpBox({super.key, required this.isHomeowner});
+
+  final bool isHomeowner;
 
   @override
   Widget build(BuildContext context) {
@@ -56,13 +63,15 @@ class SignUpBox extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 45),
-      child: const SignUpContent(),
+      child: SignUpContent(isHomeowner: isHomeowner),
     );
   }
 }
 
 class SignUpContent extends StatefulWidget {
-  const SignUpContent({super.key});
+  const SignUpContent({super.key, required this.isHomeowner});
+
+  final bool isHomeowner;
 
   @override
   State<SignUpContent> createState() => _SignUpContentState();
@@ -72,9 +81,16 @@ class _SignUpContentState extends State<SignUpContent> {
   late TextEditingController emailController;
   late bool receiveNewsletters;
 
+  bool isValid = false;
+  bool acceptTerms = false;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   Map<String, String> signUpData = {
     'email': '',
+    'name': '',
+    'password': '',
     'receiveNewsletters': 'true',
+    'isHomeowner': 'true',
   };
 
   @override
@@ -103,25 +119,66 @@ class _SignUpContentState extends State<SignUpContent> {
     Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (_) => PasswordSetupPage(
+        builder: (_) => NameSetupPage(
           signUpData: signUpData,
         ),
       ),
     );
   }
 
+  void onValidation(bool isValid) {
+    print('isValid: $isValid');
+    setState(() {
+      if (!acceptTerms) {
+        this.isValid = false;
+      } else {
+        this.isValid = isValid;
+      }
+    });
+  }
+
+  bool emailValidator(String email) {
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(email) || email == '';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        TextInputBox(
-          controller: emailController,
-          hintText: 'Email',
-          textInputAction: TextInputAction.done,
+        Form(
+          key: _formKey,
+          child: TextInputBox(
+            controller: emailController,
+            hintText: 'Email',
+            textInputAction: TextInputAction.done,
+            validator: (value) {
+              final bool validate = emailValidator(value ?? '');
+              if (validate) {
+                return null;
+              } else {
+                return 'Please enter a valid email address';
+              }
+            },
+            onFieldSubmitted: (value) {
+              if (_formKey.currentState!.validate() && value.isNotEmpty) {
+                onValidation(true);
+              } else {
+                onValidation(false);
+              }
+            },
+            onChanged: (value) {
+              if (value.isNotEmpty && _formKey.currentState!.validate()) {
+                onValidation(emailValidator(value));
+              } else {
+                onValidation(false);
+              }
+            },
+          ),
         ),
         const SizedBox(height: 20),
-        SignUpButton(
-            onPressed: emailController.text == '' ? null : onSignUpPressed),
+        LargeOrangeButton.onlyText(context,
+            text: 'Continue', onPressed: !isValid ? null : onSignUpPressed),
         const SizedBox(height: 20),
         MarketingCheckbox(
           receiveNewsletters: receiveNewsletters,
@@ -136,97 +193,16 @@ class _SignUpContentState extends State<SignUpContent> {
             });
           },
         ),
+        TermsCheckbox(
+          receiveNewsletters: acceptTerms,
+          onChange: () {
+            setState(() {
+              acceptTerms = !acceptTerms;
+              onValidation(emailValidator(emailController.text));
+            });
+          },
+        ),
       ],
-    );
-  }
-}
-
-class TextInputBox extends StatelessWidget {
-  const TextInputBox({
-    super.key,
-    required this.controller,
-    required this.hintText,
-    this.obscureText = false, // default to false
-    this.textInputAction = TextInputAction.next, // default to next
-    this.suffixIcon,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final bool obscureText;
-  final TextInputAction textInputAction;
-  final Widget? suffixIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 70,
-      child: TextFormField(
-        textInputAction: textInputAction,
-        controller: controller,
-        decoration: InputDecoration(
-          //contentPadding: const EdgeInsets.all(20),
-          isDense: false,
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: Colors.white,
-          ),
-          filled: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-          fillColor: Theme.of(context).colorScheme.surface,
-          border: OutlineInputBorder(
-            borderSide: BorderSide.none, // No outline when not focused
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary, // Primary color outline when focused
-              width: 2.0,
-            ),
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          suffixIcon: suffixIcon,
-        ),
-        obscureText: obscureText,
-      ),
-    );
-  }
-}
-
-class SignUpButton extends StatelessWidget {
-  const SignUpButton({
-    super.key,
-    required this.onPressed,
-  });
-
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 70,
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-        ),
-        child: const Text(
-          'Continue',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: Colors.white,
-          ),
-        ),
-      ),
     );
   }
 }
@@ -261,6 +237,64 @@ class MarketingCheckbox extends StatelessWidget {
             fontWeight: FontWeight.w500,
             color: Color(0xFF979797),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class TermsCheckbox extends StatelessWidget {
+  const TermsCheckbox({
+    super.key,
+    required this.receiveNewsletters,
+    required this.onChange,
+  });
+
+  final bool receiveNewsletters;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Checkbox(
+          value: receiveNewsletters,
+          onChanged: (value) {
+            onChange();
+          },
+          activeColor: Theme.of(context).colorScheme.primary,
+          checkColor:
+              receiveNewsletters ? Colors.white : const Color(0xFF979797),
+        ),
+        Row(
+          children: [
+            const Text(
+              'I accept the ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF979797),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (context) => const EulaTosScreen(),
+                  ),
+                );
+              },
+              child: Text(
+                'terms and conditions.',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

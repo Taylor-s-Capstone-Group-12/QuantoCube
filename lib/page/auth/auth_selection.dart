@@ -77,14 +77,8 @@ class SignUpButton extends StatelessWidget {
       child: Material(
         color: const Color(0xff1C1C1D),
         child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            CupertinoPageRoute(
-              builder: (_) => SignUpPage(
-                isHomeowner: isHomeowner,
-              ),
-            ),
-          ),
+          onTap: () =>
+              Navigator.pushNamed(context, '/signup', arguments: isHomeowner),
           child: Container(
             width: 157,
             height: 181,
@@ -128,12 +122,7 @@ class LoginText extends StatelessWidget {
         children: [
           const Text('I already have an account.'),
           GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              CupertinoPageRoute(
-                builder: (_) => const LoginPage(),
-              ),
-            ),
+            onTap: () => Navigator.pushNamed(context, '/login'),
             child: Text(
               'Log In',
               style: TextStyle(

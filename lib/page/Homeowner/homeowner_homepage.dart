@@ -16,7 +16,7 @@ class HomeownerHomePage extends StatelessWidget {
               const SizedBox(height: 50), // Space for status bar
               _buildHeader(), // User greeting
               const SizedBox(height: 15),
-              _buildSearchBar(), // Location + Search
+              _buildSearchBar(context), // Location + Search
               const SizedBox(height: 20),
               _buildFindProsButton(), // Find Pros button
               const SizedBox(height: 20),
@@ -54,20 +54,25 @@ class HomeownerHomePage extends StatelessWidget {
             ),
           ],
         ),
-        CircleAvatar(
+        const CircleAvatar(
           radius: 22,
-          backgroundImage: AssetImage("assets/mascot/icons.png"), // Profile picture
+          backgroundImage:
+              AssetImage("assets/mascot/icons.png"), // Profile picture
         ),
       ],
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(BuildContext context) {
     return Row(
       children: [
         IconButton(
           icon: const Icon(Icons.location_on, color: Colors.white),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushNamed(context, '/geo_search');
+
+
+          },
         ),
         Expanded(
           child: TextField(
@@ -178,11 +183,14 @@ class HomeownerHomePage extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              _buildContractorCard("assets/mascot/tv_greet.png"), // Corrected path
+              _buildContractorCard(
+                  "assets/mascot/tv_greet.png"), // Corrected path
               const SizedBox(width: 10),
-              _buildContractorCard("assets/mascot/tv_smile.png"), // Corrected path
+              _buildContractorCard(
+                  "assets/mascot/tv_smile.png"), // Corrected path
               const SizedBox(width: 10),
-              _buildContractorCard("assets/mascot/tv_cone_side.png"), // Corrected path
+              _buildContractorCard(
+                  "assets/mascot/tv_cone_side.png"), // Corrected path
             ],
           ),
         ),

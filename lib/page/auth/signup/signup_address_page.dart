@@ -6,6 +6,8 @@ import 'package:quantocube/components/buttons/large_orange_button.dart';
 import 'package:quantocube/components/text_field.dart';
 import 'package:quantocube/page/onboarding/welcome_page.dart';
 import 'package:quantocube/tests/test_func.dart';
+import 'package:quantocube/utils/geocoding_service.dart';
+import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
 
 final FirebaseFirestore _firestore =
     FirebaseFirestore.instance; // Initialize Firestore
@@ -216,17 +218,40 @@ class _SignUpAddressContentState extends State<SignUpAddressContent> {
 
         reviewMap(widget.signUpData);
 
+        String formattedAddress = [
+          _addressData['houseNumber'],
+          _addressData['streetAddress'],
+          _addressData['city'],
+          _addressData['zipCode'],
+          _addressData['state']
+        ].where((e) => e != null && e.isNotEmpty).join(', ');
+
+        // Get coordinates from the address
+        var coords =
+            await GeocodingService.getCoordinatesFromAddress(formattedAddress);
+
+        GeoFirePoint? geoFirePoint;
+        if (coords != null) {
+          geoFirePoint =
+              GeoFirePoint(GeoPoint(coords['latitude'], coords['longitude']));
+        } else {
+          print('Could not get coordinates'); // Handle geocoding failure
+        }
+
         // Ensure user is not null before storing in Firestore
         if (userCredential.user != null) {
           await _firestore
               .collection("users")
               .doc(userCredential.user!.uid)
               .set({
-          "name": widget.signUpData['name'],
-          "email": widget.signUpData['email'],
-          "createdAt": FieldValue.serverTimestamp(),
-          "address": _addressData,
-          });
+            "name": widget.signUpData['name'],
+            "email": widget.signUpData['email'],
+            "createdAt": FieldValue.serverTimestamp(),
+            "isHomeowner": widget.signUpData['isHomeowner'] == 'true',
+            "address": _addressData,
+            if (geoFirePoint != null)
+              "geo": geoFirePoint.data, // Store geolocation if available
+          }, SetOptions(merge: true)); // Merge to avoid overwriting data
         }
 
         // If successful, navigate to the Welcome Page

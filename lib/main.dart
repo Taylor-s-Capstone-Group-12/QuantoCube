@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:quantocube/page/auth/signup/signup_address_page.dart';
@@ -8,6 +9,9 @@ import 'package:quantocube/route/route_generator.dart';
 import 'package:quantocube/theme.dart';
 
 void main() async {
+
+  await dotenv.load();
+
   WidgetsFlutterBinding.ensureInitialized();
 
   // Prevent the app from rotating to landscape mode

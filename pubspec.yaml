@@ -52,6 +52,7 @@ dependencies:
   permission_handler: ^11.4.0
   json_serializable: ^6.9.4
   json_annotation: ^4.9.0
+  flutter_dotenv: ^5.2.1
   
 
 dev_dependencies:
@@ -84,6 +85,8 @@ flutter:
     - assets/videos/
     - assets/legal/
     - test/test_data/
+    - .env
+
 
 
   fonts:

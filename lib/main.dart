@@ -24,6 +24,17 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+
+  // Prevent the app from rotating to landscape mode
+  SystemChrome.setPreferredOrientations(
+    [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown],
+  );
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
 
@@ -36,6 +47,21 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: projectTheme,
+      home: const SplashScreen(),
+      navigatorObservers: [
+        KeyboardDismissNavigatorObserver(),
+      ],
+      onGenerateRoute: RouteGenerator.generateRoute,
+    );
+  }
+}
+
+// Collapse the keyboard whenever a new page is opened
+class KeyboardDismissNavigatorObserver extends NavigatorObserver {
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    super.didPop(route, previousRoute);
       home: const SplashScreen(),
       navigatorObservers: [
         KeyboardDismissNavigatorObserver(),

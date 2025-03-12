@@ -84,6 +84,8 @@ flutter:
     - assets/introduction/
     - assets/videos/
     - assets/legal/
+    - assets/videos/
+    - assets/legal/
     - test/test_data/
     - .env
 
@@ -126,6 +128,16 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
+# for generating the app icon
+flutter_launcher_icons:
+  image_path: "assets/icons/logo_orange.png"
+  android: true
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/icons/logo_orange.png"
+  min_sdk_android: 23
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#000000"
 # for generating the app icon
 flutter_launcher_icons:
   image_path: "assets/icons/logo_orange.png"

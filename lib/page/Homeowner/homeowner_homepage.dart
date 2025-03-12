@@ -16,7 +16,7 @@ class HomeownerHomePage extends StatelessWidget {
               const SizedBox(height: 50), // Space for status bar
               _buildHeader(), // User greeting
               const SizedBox(height: 15),
-              _buildSearchBar(), // Location + Search
+              _buildSearchBar(context), // Location + Search
               const SizedBox(height: 20),
               _buildFindProsButton(), // Find Pros button
               const SizedBox(height: 20),
@@ -63,12 +63,16 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(BuildContext context) {
     return Row(
       children: [
         IconButton(
           icon: const Icon(Icons.location_on, color: Colors.white),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushNamed(context, '/geo_search');
+
+
+          },
         ),
         Expanded(
           child: TextField(

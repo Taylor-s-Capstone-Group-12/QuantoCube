@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:quantocube/page/auth/signup/signup_address_page.dart';
@@ -8,7 +9,21 @@ import 'package:quantocube/route/route_generator.dart';
 import 'package:quantocube/theme.dart';
 
 void main() async {
+
+  await dotenv.load();
+
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Prevent the app from rotating to landscape mode
+  SystemChrome.setPreferredOrientations(
+    [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown],
+  );
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
 
   // Prevent the app from rotating to landscape mode
   SystemChrome.setPreferredOrientations(
@@ -32,6 +47,21 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: projectTheme,
+      home: const SplashScreen(),
+      navigatorObservers: [
+        KeyboardDismissNavigatorObserver(),
+      ],
+      onGenerateRoute: RouteGenerator.generateRoute,
+    );
+  }
+}
+
+// Collapse the keyboard whenever a new page is opened
+class KeyboardDismissNavigatorObserver extends NavigatorObserver {
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    super.didPop(route, previousRoute);
       home: const SplashScreen(),
       navigatorObservers: [
         KeyboardDismissNavigatorObserver(),

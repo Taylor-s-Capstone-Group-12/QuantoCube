@@ -46,6 +46,14 @@ dependencies:
   video_player: ^2.9.3
   flutter_launcher_icons: ^0.14.3
   flutter_native_splash: ^2.4.5
+  google_maps_flutter: ^2.10.1
+  geoflutterfire_plus: ^0.0.32
+  location: ^8.0.0
+  permission_handler: ^11.4.0
+  json_serializable: ^6.9.4
+  json_annotation: ^4.9.0
+  flutter_dotenv: ^5.2.1
+  
 
 dev_dependencies:
   flutter_test:
@@ -57,6 +65,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
+  build_runner: ^2.4.15
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -75,7 +84,11 @@ flutter:
     - assets/introduction/
     - assets/videos/
     - assets/legal/
+    - assets/videos/
+    - assets/legal/
     - test/test_data/
+    - .env
+
 
 
   fonts:

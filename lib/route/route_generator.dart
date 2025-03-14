@@ -7,6 +7,7 @@ import 'package:quantocube/page/auth/login_page.dart';
 import 'package:quantocube/data/contractor/contractor_data.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
+import 'package:quantocube/page/search/geo_search.dart';
 import 'package:quantocube/route/error_page.dart';
 
 class RouteGenerator {
@@ -47,6 +48,8 @@ class RouteGenerator {
         } else {
           return _errorRoute();
         }
+      case '/geo_search':
+        return CupertinoPageRoute(builder: (_) => GeoSearchPage());
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();

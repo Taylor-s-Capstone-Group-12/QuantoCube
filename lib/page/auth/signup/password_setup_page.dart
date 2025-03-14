@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:quantocube/components/buttons/large_orange_button.dart';
 import 'package:quantocube/components/widgets/text_field.dart';
 import 'package:quantocube/page/auth/signup/signup_address_page.dart';
@@ -91,8 +91,11 @@ class SignUpContent extends StatefulWidget {
 
 class _SignUpContentState extends State<SignUpContent> {
   late TextEditingController passwordController;
+
   late TextEditingController confirmPasswordController;
+
   late bool isPasswordValid;
+
   late bool isFormValid;
 
   final _formKey = GlobalKey<FormState>();
@@ -102,16 +105,22 @@ class _SignUpContentState extends State<SignUpContent> {
   @override
   void initState() {
     passwordController = TextEditingController();
+
     confirmPasswordController = TextEditingController();
+
     isFormValid = false;
+
     isPasswordValid = false;
+
     super.initState();
   }
 
   @override
   void dispose() {
     passwordController.dispose();
+
     confirmPasswordController.dispose();
+
     super.dispose();
   }
 
@@ -130,6 +139,7 @@ class _SignUpContentState extends State<SignUpContent> {
   }
 
   // function to update the validation flag
+
   void setValidation(bool status) {
     setState(() {
       isFormValid = status;
@@ -137,32 +147,43 @@ class _SignUpContentState extends State<SignUpContent> {
   }
 
   // function to validate the password
+
   bool passwordValidator(String password) {
     // check if the password is at least 8 characters long,
+
     // contains at least one uppercase letter,
+
     // one lowercase letter, one number,
+
     // and one special character
+
     if (password.isEmpty) {
       setValidation(false);
+
       return true;
     }
 
     final RegExp regex = RegExp(
         r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,4096}$');
+
     return regex.hasMatch(password);
   }
 
   // function to validate the confirm password
+
   bool confirmPasswordValidator() {
     if (passwordController.text.isEmpty ||
         confirmPasswordController.text.isEmpty) {
       setValidation(false);
+
       return false;
     } else if (passwordController.text != confirmPasswordController.text) {
       setValidation(false);
+
       return false;
     } else {
       setValidation(true);
+
       return true;
     }
   }
@@ -180,6 +201,7 @@ class _SignUpContentState extends State<SignUpContent> {
             obscureText: passwordObscure,
             validator: (value) {
               final bool validate = passwordValidator(value ?? '');
+
               if (validate) {
                 return null;
               } else {
@@ -188,6 +210,7 @@ class _SignUpContentState extends State<SignUpContent> {
             },
             onChanged: (value) {
               widget.signUpData['password'] = value;
+
               if (value.isNotEmpty) {
                 passwordValidator(value)
                     ? setValidation(confirmPasswordValidator())
@@ -216,9 +239,11 @@ class _SignUpContentState extends State<SignUpContent> {
             obscureText: true,
             validator: (value) {
               final bool validate = confirmPasswordValidator();
+
               if (value == null || value.isEmpty) {
                 return null;
               }
+
               if (validate) {
                 return null;
               } else {

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:quantocube/components/components.dart';
 import 'package:quantocube/page/homeowner/homeowner_homepage.dart';
 import 'package:quantocube/page/homeowner/listing/contractor_profile.dart';
 import 'package:quantocube/page/auth/auth_selection.dart';
@@ -41,9 +42,12 @@ class RouteGenerator {
         return _errorRoute();
       case '/homeowner/contractor_page':
         // Validation of correct data type
-        if (args is ContractorProfileData) {
+        if (args is ContractorPageArgs) {
           return CupertinoPageRoute(
-            builder: (_) => ContractorProfile(),
+            builder: (_) => ContractorProfile(
+              contractor: args.contractor,
+              reviews: args.reviews,
+            ),
           );
         } else {
           return _errorRoute();

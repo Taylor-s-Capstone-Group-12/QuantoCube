@@ -3,13 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:quantocube/components/buttons/large_orange_button.dart';
 import 'package:quantocube/components/widgets/text_field.dart';
 import 'package:quantocube/page/auth/signup/signup_address_page.dart';
-import 'package:quantocube/page/onboarding/welcome_page.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uuid/uuid.dart';
-
-final FirebaseFirestore _firestore =
-    FirebaseFirestore.instance; // Initialize Firestore
 
 class PasswordSetupPage extends StatelessWidget {
   const PasswordSetupPage({

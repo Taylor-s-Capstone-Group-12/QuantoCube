@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:quantocube/components/components.dart';
 import 'package:quantocube/data/contractor/contractor_data.dart';
 import 'package:quantocube/data/others/review_data.dart';
 import 'package:quantocube/tests/sample_classes.dart';

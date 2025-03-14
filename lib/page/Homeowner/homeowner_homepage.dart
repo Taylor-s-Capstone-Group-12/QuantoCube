@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantocube/page/homeowner/find_pros.dart';
 
 class HomeownerHomePage extends StatelessWidget {
   const HomeownerHomePage({super.key});
@@ -6,29 +7,31 @@ class HomeownerHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark theme background
+      backgroundColor: Colors.black,
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 50), // Space for status bar
-              _buildHeader(), // User greeting
+              const SizedBox(height: 50),
+              _buildHeader(),
               const SizedBox(height: 15),
-              _buildSearchBar(context), // Location + Search
+              _buildSearchBar(context),
               const SizedBox(height: 20),
-              _buildFindProsButton(), // Find Pros button
+              _buildFindProsButton(context),
               const SizedBox(height: 20),
-              _buildOngoingProjects(), // Ongoing projects section
+              _buildOngoingProjects(),
               const SizedBox(height: 20),
-              _buildFeaturedContractors(), // Featured contractors section
-              const SizedBox(height: 80), // Space for bottom nav
+              _buildFeaturedContractors(),
+              const SizedBox(height: 20),
+              _buildServiceCategories(),
+              const SizedBox(height: 80),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(), // Persistent navbar
+      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
@@ -54,10 +57,9 @@ class HomeownerHomePage extends StatelessWidget {
             ),
           ],
         ),
-        const CircleAvatar(
+        CircleAvatar(
           radius: 22,
-          backgroundImage:
-              AssetImage("assets/mascot/icons.png"), // Profile picture
+          backgroundImage: AssetImage("assets/mascot/homeowner.png"),
         ),
       ],
     );
@@ -70,8 +72,6 @@ class HomeownerHomePage extends StatelessWidget {
           icon: const Icon(Icons.location_on, color: Colors.white),
           onPressed: () {
             Navigator.pushNamed(context, '/geo_search');
-
-
           },
         ),
         Expanded(
@@ -94,28 +94,35 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildFindProsButton() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset("assets/mascot/icons.png", height: 40), // Correct path
-          const SizedBox(width: 10),
-          const Text(
-            "Find Pros",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+  Widget _buildFindProsButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const FindProsPage()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset("assets/mascot/icons.png", height: 40),
+            const SizedBox(width: 10),
+            const Text(
+              "Find Pros",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -124,7 +131,11 @@ class HomeownerHomePage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle("Ongoing Project"),
+        const Text("Ongoing Project",
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         _buildProjectCard("Quoted", Icons.attach_money, Colors.yellow[700]!),
         const SizedBox(height: 10),
@@ -176,21 +187,22 @@ class HomeownerHomePage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle("Featured Contractor"),
+        const Text("Featured Contractor",
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         SizedBox(
           height: 150,
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              _buildContractorCard(
-                  "assets/mascot/tv_greet.png"), // Corrected path
+              _buildContractorCard("assets/mascot/tv_greet.png"),
               const SizedBox(width: 10),
-              _buildContractorCard(
-                  "assets/mascot/tv_smile.png"), // Corrected path
+              _buildContractorCard("assets/mascot/tv_smile.png"),
               const SizedBox(width: 10),
-              _buildContractorCard(
-                  "assets/mascot/tv_cone_side.png"), // Corrected path
+              _buildContractorCard("assets/mascot/tv_cone_side.png"),
             ],
           ),
         ),
@@ -205,45 +217,56 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
+  Widget _buildServiceCategories() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Service Category",
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 3,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1,
+          children: [
+            _buildCategoryCard("Renovations", "assets/mascot/icons.png"),
+            _buildCategoryCard("Installations", "assets/mascot/icons.png"),
+            _buildCategoryCard("Electrical", "assets/mascot/icons.png"),
+            _buildCategoryCard("Plumbing", "assets/mascot/icons.png"),
+            _buildCategoryCard("Air Conditioning", "assets/mascot/icons.png"),
+            _buildCategoryCard("More", "assets/mascot/icons.png"),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryCard(String title, String imagePath) {
+    return Column(
+      children: [
+        Image.asset(imagePath, height: 50),
+        const SizedBox(height: 5),
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
+      ],
+    );
+  }
+
   Widget _buildBottomNavBar() {
     return BottomNavigationBar(
       backgroundColor: Colors.black,
       selectedItemColor: Colors.orange,
       unselectedItemColor: Colors.white,
       items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: '',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.message),
-          label: '',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_bag),
-          label: '',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: '',
-        ),
-      ],
-    );
-  }
-
-  Widget _sectionTitle(String title) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.message), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
       ],
     );
   }

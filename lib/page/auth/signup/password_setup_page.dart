@@ -1,12 +1,12 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:quantocube/components/buttons/large_orange_button.dart';
 import 'package:quantocube/components/text_field.dart';
 import 'package:quantocube/page/auth/signup/signup_address_page.dart';
 import 'package:quantocube/page/onboarding/welcome_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 
 final FirebaseFirestore _firestore =
     FirebaseFirestore.instance; // Initialize Firestore
@@ -44,7 +44,6 @@ class PasswordSetupPage extends StatelessWidget {
             ),
             Expanded(
               child: PasswordBox(
-              child: PasswordBox(
                 signUpData: signUpData,
               ),
             ),
@@ -55,8 +54,6 @@ class PasswordSetupPage extends StatelessWidget {
   }
 }
 
-class PasswordBox extends StatelessWidget {
-  const PasswordBox({
 class PasswordBox extends StatelessWidget {
   const PasswordBox({
     super.key,
@@ -94,14 +91,11 @@ class SignUpContent extends StatefulWidget {
 
 class _SignUpContentState extends State<SignUpContent> {
   late TextEditingController passwordController;
+
   late TextEditingController confirmPasswordController;
-  late bool isPasswordValid;
-  late bool isFormValid;
 
-  final _formKey = GlobalKey<FormState>();
-
-  bool passwordObscure = true;
   late bool isPasswordValid;
+
   late bool isFormValid;
 
   final _formKey = GlobalKey<FormState>();
@@ -111,18 +105,22 @@ class _SignUpContentState extends State<SignUpContent> {
   @override
   void initState() {
     passwordController = TextEditingController();
+
     confirmPasswordController = TextEditingController();
+
     isFormValid = false;
+
     isPasswordValid = false;
-    isFormValid = false;
-    isPasswordValid = false;
+
     super.initState();
   }
 
   @override
   void dispose() {
     passwordController.dispose();
+
     confirmPasswordController.dispose();
+
     super.dispose();
   }
 
@@ -141,25 +139,7 @@ class _SignUpContentState extends State<SignUpContent> {
   }
 
   // function to update the validation flag
-  void setValidation(bool status) {
-    setState(() {
-      isFormValid = status;
-    });
-  // navigate to the welcome page if the password is acceptable.
-  void onContinue() {
-    if (isFormValid) {
-      Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (context) => SignUpAddressPage(
-            signUpData: widget.signUpData,
-          ),
-        ),
-      );
-    }
-  }
 
-  // function to update the validation flag
   void setValidation(bool status) {
     setState(() {
       isFormValid = status;
@@ -167,61 +147,43 @@ class _SignUpContentState extends State<SignUpContent> {
   }
 
   // function to validate the password
+
   bool passwordValidator(String password) {
     // check if the password is at least 8 characters long,
+
     // contains at least one uppercase letter,
+
     // one lowercase letter, one number,
+
     // and one special character
+
     if (password.isEmpty) {
       setValidation(false);
+
       return true;
     }
 
     final RegExp regex = RegExp(
         r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,4096}$');
+
     return regex.hasMatch(password);
   }
 
   // function to validate the confirm password
+
   bool confirmPasswordValidator() {
     if (passwordController.text.isEmpty ||
         confirmPasswordController.text.isEmpty) {
       setValidation(false);
+
       return false;
     } else if (passwordController.text != confirmPasswordController.text) {
       setValidation(false);
+
       return false;
     } else {
       setValidation(true);
-      return true;
-    }
-  // function to validate the password
-  bool passwordValidator(String password) {
-    // check if the password is at least 8 characters long,
-    // contains at least one uppercase letter,
-    // one lowercase letter, one number,
-    // and one special character
-    if (password.isEmpty) {
-      setValidation(false);
-      return true;
-    }
 
-    final RegExp regex = RegExp(
-        r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,4096}$');
-    return regex.hasMatch(password);
-  }
-
-  // function to validate the confirm password
-  bool confirmPasswordValidator() {
-    if (passwordController.text.isEmpty ||
-        confirmPasswordController.text.isEmpty) {
-      setValidation(false);
-      return false;
-    } else if (passwordController.text != confirmPasswordController.text) {
-      setValidation(false);
-      return false;
-    } else {
-      setValidation(true);
       return true;
     }
   }
@@ -239,6 +201,7 @@ class _SignUpContentState extends State<SignUpContent> {
             obscureText: passwordObscure,
             validator: (value) {
               final bool validate = passwordValidator(value ?? '');
+
               if (validate) {
                 return null;
               } else {
@@ -247,6 +210,7 @@ class _SignUpContentState extends State<SignUpContent> {
             },
             onChanged: (value) {
               widget.signUpData['password'] = value;
+
               if (value.isNotEmpty) {
                 passwordValidator(value)
                     ? setValidation(confirmPasswordValidator())
@@ -275,84 +239,11 @@ class _SignUpContentState extends State<SignUpContent> {
             obscureText: true,
             validator: (value) {
               final bool validate = confirmPasswordValidator();
+
               if (value == null || value.isEmpty) {
                 return null;
               }
-              if (validate) {
-                return null;
-              } else {
-                return 'Password does not match';
-              }
-            },
-            onFieldSubmitted: (value) {
-              if (_formKey.currentState!.validate()) {
-                setValidation(true);
-              } else {
-                setValidation(false);
-              }
-            },
-            onChanged: (value) {
-              if (value.isNotEmpty && passwordController.text.isNotEmpty) {
-                confirmPasswordValidator();
-              } else {
-                setValidation(false);
-              }
-            },
-          ),
-          const SizedBox(height: 20),
-          LargeOrangeButton.onlyText(context,
-              onPressed: isFormValid ? onContinue : null, text: 'Continue'),
-        ],
-    return Form(
-      autovalidateMode: AutovalidateMode.onUnfocus,
-      key: _formKey,
-      child: Column(
-        children: [
-          TextInputBox(
-            controller: passwordController,
-            hintText: 'Password',
-            obscureText: passwordObscure,
-            validator: (value) {
-              final bool validate = passwordValidator(value ?? '');
-              if (validate) {
-                return null;
-              } else {
-                return '• Password must be at least 8 characters long\n• at least one uppercase letter \n• one lowercase letter,\n• one number,\n• one special character';
-              }
-            },
-            onChanged: (value) {
-              widget.signUpData['password'] = value;
-              if (value.isNotEmpty) {
-                passwordValidator(value)
-                    ? setValidation(confirmPasswordValidator())
-                    : setValidation(false);
-              } else {
-                setValidation(false);
-              }
-            },
-            suffixIcon: GestureDetector(
-              onTap: () {
-                setState(() {
-                  passwordObscure = !passwordObscure;
-                });
-              },
-              child: Icon(
-                passwordObscure ? Icons.visibility : Icons.visibility_off,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          TextInputBox(
-            controller: confirmPasswordController,
-            hintText: 'Confirm Password',
-            textInputAction: TextInputAction.done,
-            obscureText: true,
-            validator: (value) {
-              final bool validate = confirmPasswordValidator();
-              if (value == null || value.isEmpty) {
-                return null;
-              }
+
               if (validate) {
                 return null;
               } else {

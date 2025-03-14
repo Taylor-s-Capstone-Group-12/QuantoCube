@@ -2,9 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:quantocube/components/buttons/large_orange_button.dart';
-import 'package:quantocube/components/loading_overlay.dart';
-import 'package:quantocube/components/text_field.dart';
+import 'package:quantocube/components/overlays/loading_overlay.dart';
+import 'package:quantocube/components/widgets/text_field.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
+import 'package:quantocube/utils/utils.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -90,6 +91,9 @@ class _LoginBoxContentState extends State<LoginBoxContent> {
   }
 
   void onLogin(String email, String password) async {
+    // Unfocus the keyboard
+    Utils.unfocusKeyboard(context);
+
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter email and password')),
@@ -135,7 +139,6 @@ class _LoginBoxContentState extends State<LoginBoxContent> {
   }
 
   void onSignUp() {
-    // TODO: Implement sign up logic here
     Navigator.push(
       context,
       CupertinoPageRoute(

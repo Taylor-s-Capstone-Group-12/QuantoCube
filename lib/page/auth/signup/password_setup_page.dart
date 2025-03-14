@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:quantocube/components/buttons/large_orange_button.dart';
-import 'package:quantocube/components/text_field.dart';
+import 'package:quantocube/components/widgets/text_field.dart';
 import 'package:quantocube/page/auth/signup/signup_address_page.dart';
 import 'package:quantocube/page/onboarding/welcome_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';

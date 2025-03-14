@@ -40,7 +40,7 @@ class RouteGenerator {
         return _errorRoute();
       case '/homeowner/contractor_page':
         // Validation of correct data type
-        if (args is ContractorData) {
+        if (args is ContractorProfileData) {
           return CupertinoPageRoute(
             builder: (_) => ContractorProfile(),
           );

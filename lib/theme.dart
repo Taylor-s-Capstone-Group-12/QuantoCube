@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 final ThemeData projectTheme = ThemeData(
+  useMaterial3: true,
+  iconTheme: const IconThemeData(color: Colors.white),
   colorScheme: ColorScheme.fromSeed(
     surface: Colors.black,
     seedColor: const Color.fromARGB(255, 254, 89, 37),

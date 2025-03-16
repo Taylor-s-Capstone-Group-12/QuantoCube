@@ -2,7 +2,7 @@ import 'package:quantocube/data/contractor/contractor_data.dart';
 import 'package:quantocube/data/others/review_data.dart';
 
 final ContractorProfileData dummyContractorProfile = ContractorProfileData(
-    name: 'John Doe',
+    name: 'Jackson Hon',
     email: 'example@email.com',
     rating: 4.5,
     location: 'Petaling Jaya',

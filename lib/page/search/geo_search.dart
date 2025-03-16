@@ -18,6 +18,9 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
   LatLng? _currentUserLocation;
   double _selectedDistance = 10.0; // Default radius (km)
 
+  // 1) Add a list to hold nearby users for the bottom carousel
+  List<Map<String, dynamic>> _nearbyUsers = [];
+
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _fetchUserLocation();
@@ -52,10 +55,12 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
           );
 
           mapController.animateCamera(
-              CameraUpdate.newLatLngZoom(_currentUserLocation!, 11.0));
+            CameraUpdate.newLatLngZoom(_currentUserLocation!, 11.0),
+          );
         });
 
-        _fetchNearbyUsers(); // Fetch users after getting current location
+        // Fetch users after getting current location
+        _fetchNearbyUsers();
       } else {
         print("❌ User location not found in Firestore.");
       }
@@ -73,11 +78,12 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
     print("🔍 Searching users within ${_selectedDistance.toInt()} km");
 
     final collectionReference = FirebaseFirestore.instance.collection('users');
-
-    final GeoFirePoint center = GeoFirePoint(GeoPoint(
-      _currentUserLocation!.latitude,
-      _currentUserLocation!.longitude,
-    ));
+    final GeoFirePoint center = GeoFirePoint(
+      GeoPoint(
+        _currentUserLocation!.latitude,
+        _currentUserLocation!.longitude,
+      ),
+    );
 
     GeoPoint geopointFrom(Map<String, dynamic> data) {
       if (data.containsKey('geo') &&
@@ -89,12 +95,11 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
           "❌ Invalid location data for ${data['name'] ?? 'Unknown'}");
     }
 
-    // ✅ Apply correction factor (÷3.506) in query
     final Stream<List<DocumentSnapshot<Map<String, dynamic>>>> stream =
         GeoCollectionReference<Map<String, dynamic>>(collectionReference)
             .subscribeWithin(
       center: center,
-      radiusInKm: _selectedDistance / 3.506,
+      radiusInKm: _selectedDistance / 3.506, // ✅ Correction factor applied
       field: 'geo',
       geopointFrom: geopointFrom,
     );
@@ -103,6 +108,8 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
       print("📌 Found ${docs.length} users before filtering");
       int filteredCount = 0;
       int totalCount = docs.length;
+
+      final List<Map<String, dynamic>> tempUsers = [];
 
       setState(() {
         _markers.removeWhere((marker) =>
@@ -118,6 +125,11 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
                 LatLng(geopoint.latitude, geopoint.longitude);
             final String username = data['name'] ?? 'Unknown';
 
+            // ✅ Skip adding the logged-in user
+            if (doc.id == FirebaseAuth.instance.currentUser?.uid) {
+              continue;
+            }
+
             // ✅ Apply manual distance filtering
             final double actualDistance = _calculateDistance(
               _currentUserLocation!.latitude,
@@ -128,7 +140,15 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
 
             if (actualDistance <= _selectedDistance) {
               print(
-                  "✅ User in range (${actualDistance.toStringAsFixed(2)} km): $username");
+                "✅ User in range (${actualDistance.toStringAsFixed(2)} km): $username",
+              );
+
+              tempUsers.add({
+                'name': username,
+                'distance': actualDistance,
+                'role': 'Renovator', // Placeholder
+                'rating': 4.6, // Placeholder rating
+              });
 
               _markers.add(
                 Marker(
@@ -139,13 +159,19 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
               );
             } else {
               print(
-                  "❌ User filtered out (${actualDistance.toStringAsFixed(2)} km): $username");
+                "❌ User filtered out (${actualDistance.toStringAsFixed(2)} km): $username",
+              );
               filteredCount++;
             }
           } catch (e) {
             print("⚠ Error processing user ${doc.id}: $e");
           }
         }
+
+        // Sort the temp list by distance, nearest first
+        tempUsers.sort((a, b) => a['distance'].compareTo(b['distance']));
+        _nearbyUsers = tempUsers;
+
         print("🔎 Debug: $filteredCount filtered out of $totalCount users");
       });
     });
@@ -180,6 +206,7 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
       ),
       body: Stack(
         children: [
+          // 3) Keep your original GoogleMap and distance UI
           GoogleMap(
             onMapCreated: _onMapCreated,
             initialCameraPosition: CameraPosition(
@@ -202,7 +229,9 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
                   Text(
                     "Distance: ${_selectedDistance.toInt()} km",
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   SizedBox(height: 5),
                   Slider(
@@ -224,6 +253,87 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
                   ),
                 ],
               ),
+            ),
+          ),
+
+          // 4) Add the carousel overlay at the bottom
+          Positioned(
+            bottom: 10,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 160, // adjust as needed
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _nearbyUsers.length,
+                itemBuilder: (context, index) {
+                  final user = _nearbyUsers[index];
+                  return _buildCarouselCard(user);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 5) Helper widget to build each carousel card
+  Widget _buildCarouselCard(Map<String, dynamic> user) {
+    return Container(
+      width: 220,
+      margin: EdgeInsets.symmetric(horizontal: 8),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Placeholder for user image
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundImage: AssetImage('assets/avatar_placeholder.png'),
+              ),
+              SizedBox(width: 10),
+              // Role or category label
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey[800],
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  user['role'] ?? 'Role',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10),
+          // Name
+          Text(
+            user['name'] ?? 'Unknown',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          // Distance and rating placeholders
+          Text(
+            'Ad • ${user['distance']?.toStringAsFixed(1) ?? '--'} km  ★ ${user['rating'] ?? '--'}',
+            style: TextStyle(color: Colors.white70),
+          ),
+          Spacer(),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Icon(
+              Icons.arrow_forward,
+              color: Color(0xFFFE5823), // Orange
             ),
           ),
         ],

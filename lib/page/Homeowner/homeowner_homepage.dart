@@ -204,9 +204,9 @@ class HomeownerHomePage extends StatelessWidget {
             const SizedBox(height: 10),
             ...projects.map((project) {
               print("Rendering project: ${project["name"]}");
-              return _buildProjectCard(                                                                                                
+              return _buildProjectCard(
                 project["name"],
-                project["otherUserName"]??"empty",
+                project["otherUserName"] ?? "empty",
                 project["status"],
                 project["createdAt"],
               );

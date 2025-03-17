@@ -88,6 +88,8 @@ flutter:
     - assets/legal/
     - assets/videos/
     - assets/legal/
+    - assets/icons/
+    - assets/icons/project/
     - test/test_data/
     - .env
 

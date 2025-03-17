@@ -28,7 +28,7 @@ class HomeownerHomePage extends StatelessWidget {
                 FirebaseAuth.instance.currentUser!
                     .uid, // Pass the user's ID dynamically
                 true, // Change to false if the user is a contractor
-                3, // Number of projects to fetch
+                5, // Number of projects to fetch
               ),
               const SizedBox(height: 20),
               _buildFeaturedContractors(),
@@ -204,9 +204,9 @@ class HomeownerHomePage extends StatelessWidget {
             const SizedBox(height: 10),
             ...projects.map((project) {
               print("Rendering project: ${project["name"]}");
-              return _buildProjectCard(                                                                                                
+              return _buildProjectCard(
                 project["name"],
-                project["otherUserName"]??"empty",
+                project["otherUserName"] ?? "empty",
                 project["status"],
                 project["createdAt"],
               );
@@ -217,35 +217,122 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-  /// 🔹 Builds a Single Project Card
+  // /// 🔹 Builds a Single Project Card
+  // Widget _buildProjectCard(String projectName, String otherUserName,
+  //     String status, Timestamp createdAt) {
+  //   return Card(
+  //     color: Colors.grey[900],
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  //     child: ListTile(
+  //       title: Text(
+  //         projectName,
+  //         style: const TextStyle(
+  //             color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+  //       ),
+  //       subtitle: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text(
+  //             "Partner: $otherUserName",
+  //             style: const TextStyle(color: Colors.white70, fontSize: 14),
+  //           ),
+  //           Text(
+  //             "Status: $status",
+  //             style: const TextStyle(color: Colors.white70, fontSize: 14),
+  //           ),
+  //           Text(
+  //             "Created: ${formatDate(createdAt)}",
+  //             style: const TextStyle(color: Colors.white70, fontSize: 14),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  String _formatStatus(String status) {
+  // Handle empty status
+  if (status.isEmpty) return '';
+  
+  // Add a space before each capital letter (except the first one)
+  String spaced = status.replaceAllMapped(
+    RegExp(r'(?<=[a-z])[A-Z]'),
+    (match) => ' ${match.group(0)}'
+  );
+  
+  // Capitalize first letter and return
+  return spaced[0].toUpperCase() + spaced.substring(1);
+}
+
+  /// 🔹 Builds a Modern Project Card
   Widget _buildProjectCard(String projectName, String otherUserName,
       String status, Timestamp createdAt) {
-    return Card(
-      color: Colors.grey[900],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: ListTile(
-        title: Text(
-          projectName,
-          style: const TextStyle(
-              color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Partner: $otherUserName",
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+    String imageUrl = ""; // Placeholder for image URL (Replace later)
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey[900], // Dark gray background
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          // 🔹 Left Image (Square)
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.grey[800], // Placeholder color
+              borderRadius:
+                  BorderRadius.circular(8), // Square with slight rounding
             ),
-            Text(
-              "Status: $status",
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                "assets/icons/project/$status.png",
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.image, color: Colors.white54),
+              ),
             ),
-            Text(
-              "Created: ${formatDate(createdAt)}",
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(width: 12),
+
+          // 🔹 Project Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 🏷 Project Name
+                Text(
+                  projectName,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 4),
+
+                // 📌 Status
+                Text(
+                  _formatStatus(status),
+                  style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                ),
+
+                // 👤 Other User
+                Text(
+                  "${formatDate(createdAt)} • $otherUserName",
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // 🔹 Arrow Button
+          const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+        ],
       ),
     );
   }

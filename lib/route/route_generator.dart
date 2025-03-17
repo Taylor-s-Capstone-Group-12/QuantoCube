@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:quantocube/components/components.dart';
 import 'package:quantocube/page/homeowner/homeowner_homepage.dart';
 import 'package:quantocube/page/homeowner/listing/contractor_profile.dart';
+import 'package:quantocube/page/homeowner/listing/contractor_profile_page.dart';
 import 'package:quantocube/page/auth/auth_selection.dart';
 import 'package:quantocube/page/auth/login_page.dart';
 import 'package:quantocube/data/contractor/contractor_data.dart';
@@ -54,6 +55,13 @@ class RouteGenerator {
         }
       case '/geo_search':
         return CupertinoPageRoute(builder: (_) => GeoSearchPage());
+      case '/homeowner/contractor_profile_page':
+        if (args is String) {
+          return CupertinoPageRoute(
+            builder: (_) => ContractorProfilePage(contractorId: args),
+          );
+        }
+        return _errorRoute();
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();

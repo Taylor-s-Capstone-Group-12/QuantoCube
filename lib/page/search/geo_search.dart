@@ -16,7 +16,7 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
   final LatLng _defaultCenter =
       const LatLng(3.1390, 101.6869); // KL Coordinates
   LatLng? _currentUserLocation;
-  double _selectedDistance = 10.0; // Default radius (km)
+  double _selectedDistance = 20.0; // Default radius (km)
 
   // 1) Add a list to hold nearby users for the bottom carousel
   List<Map<String, dynamic>> _nearbyUsers = [];
@@ -24,6 +24,12 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _fetchUserLocation();
+  }
+
+  @override
+  void dispose() {
+    mapController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchUserLocation() async {
@@ -144,6 +150,7 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
               );
 
               tempUsers.add({
+                'uuid': doc.id,
                 'name': username,
                 'distance': actualDistance,
                 'role': 'Renovator', // Placeholder
@@ -197,6 +204,56 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
     return degrees * (pi / 180);
   }
 
+
+void _flashMarker(String markerId) async {
+  // Find the marker
+  Marker? targetMarker = _markers.firstWhere(
+    (marker) => marker.markerId.value == markerId,
+    orElse: () => Marker(markerId: MarkerId('not_found')),
+  );
+
+  if (targetMarker.markerId.value == 'not_found') {
+    print("❌ Marker not found!");
+    return;
+  }
+
+  LatLng position = targetMarker.position;
+
+  // Define the colors to flash between
+  List<BitmapDescriptor> colors = [
+    BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+    BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+  ];
+
+  for (int i = 0; i < 4; i++) {
+    setState(() {
+      _markers.removeWhere((m) => m.markerId.value == markerId);
+      _markers.add(
+        Marker(
+          markerId: MarkerId(markerId),
+          position: position,
+          icon: colors[i % 2], // Alternate between two colors
+        ),
+      );
+    });
+
+    await Future.delayed(Duration(milliseconds: 300)); // Delay between flashes
+  }
+
+  // Restore original marker
+  setState(() {
+    _markers.removeWhere((m) => m.markerId.value == markerId);
+    _markers.add(
+      Marker(
+        markerId: MarkerId(markerId),
+        position: position,
+        icon: BitmapDescriptor.defaultMarker, // Restore original color
+      ),
+    );
+  });
+
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -237,8 +294,8 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
                   Slider(
                     value: _selectedDistance,
                     min: 10,
-                    max: 50,
-                    divisions: 40, // 5km steps (5, 10, 15, ... 50)
+                    max: 30,
+                    divisions: 20, // 5km steps (5, 10, 15, ... 50)
                     label: "${_selectedDistance.toStringAsFixed(2)} km",
                     activeColor: Color(0xFFFE5823), // Orange
                     inactiveColor: Colors.white30,
@@ -280,64 +337,98 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
 
   // 5) Helper widget to build each carousel card
   Widget _buildCarouselCard(Map<String, dynamic> user) {
-    return Container(
-      width: 220,
-      margin: EdgeInsets.symmetric(horizontal: 8),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black87,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Placeholder for user image
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: AssetImage('assets/avatar_placeholder.png'),
-              ),
-              SizedBox(width: 10),
-              // Role or category label
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.grey[800],
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  user['role'] ?? 'Role',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10),
-          // Name
-          Text(
-            user['name'] ?? 'Unknown',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+  return Container(
+    width: 220,
+    margin: EdgeInsets.symmetric(horizontal: 8),
+    padding: EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: Colors.black87,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundImage: AssetImage('assets/avatar_placeholder.png'),
             ),
-          ),
-          // Distance and rating placeholders
-          Text(
-            'Ad • ${user['distance']?.toStringAsFixed(1) ?? '--'} km  ★ ${user['rating'] ?? '--'}',
-            style: TextStyle(color: Colors.white70),
-          ),
-          Spacer(),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Icon(
-              Icons.arrow_forward,
-              color: Color(0xFFFE5823), // Orange
+            SizedBox(width: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                user['role'] ?? 'Role',
+                style: TextStyle(color: Colors.white70, fontSize: 11),
+              ),
             ),
+          ],
+        ),
+        SizedBox(height: 4),
+        Text(
+          user['name'] ?? 'Unknown',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
           ),
-        ],
-      ),
-    );
-  }
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          'Ad • ${user['distance']?.toStringAsFixed(1) ?? '--'} km  ★ ${user['rating'] ?? '--'}',
+          style: TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        SizedBox(height: 5),
+
+        // New Locate Button
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: Icon(Icons.my_location, color: Colors.blueAccent),
+              onPressed: () {
+                String contractorId = user['uuid'];
+                
+                // ✅ Find the matching marker in _markers 
+                Marker? contractorMarker = _markers.firstWhere(
+                  (marker) => marker.markerId.value == contractorId,
+                  orElse: () => Marker(markerId: MarkerId('not_found')), // Fallback
+                );
+
+                if (contractorMarker.markerId.value != 'not_found') {
+                  print("📍 Moving camera to contractor ${user['name']}");
+    
+                  mapController.animateCamera(
+                    CameraUpdate.newLatLngZoom(contractorMarker.position, 14.0),
+                  );
+
+                   _flashMarker(user['uuid']);
+                } else {
+                  print("❌ Contractor marker not found!");
+                }
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.arrow_forward, color: Color(0xFFFE5823)),
+              onPressed: () {
+                if (user['uuid'] != null) {
+                  Navigator.pushNamed(
+                    context,
+                    '/homeowner/contractor_profile_page',
+                    arguments: user['uuid'],
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
 }

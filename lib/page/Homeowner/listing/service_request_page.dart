@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:quantocube/components/buttons/back_button.dart';
 import 'package:quantocube/components/components.dart';
 import 'package:quantocube/theme.dart';
@@ -31,7 +32,7 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
     serviceRequest = {
       'userID': widget.userID,
       'contractorID': widget.contractorID,
-      'createdAt': '',
+      'createdAt': FieldValue.serverTimestamp().toString(),
       'service': '',
       'details': '',
       'location': '',
@@ -53,10 +54,7 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
     return serviceRequest['service'] != '';
   }
 
-  Future<String> createProjectDocument({
-    required String homeownerId,
-    required String contractorId,
-  }) async {
+  Future<String> createProjectDocument() async {
     String projectId = Uuid().v4(); // Generate a unique ID
 
     DocumentReference projectRef =
@@ -65,28 +63,29 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
     try {
       // Create project document
       await projectRef.set({
-        "homeownerId": homeownerId,
-        "contractorId": contractorId,
+        "homeownerId": widget.userID,
+        "contractorId": widget.contractorID,
+        "createdAt": FieldValue.serverTimestamp(),
       });
 
       // Initialize "details" document
       await projectRef.collection("data").doc("details").set({
-        "dateCreated": FieldValue.serverTimestamp(),
-        "name": "",
-        "serviceType": "",
-        "serviceDetail": "",
-        "location": "",
-        "startDate": null,
-        "endDate": null,
-        "budgetMin": 0,
-        "budgetMax": 0,
-        "comments": "",
+        "createdAt": FieldValue.serverTimestamp(),
+        "name": serviceRequest['projectName'],
+        "serviceType": serviceRequest['service'],
+        "serviceDetail": serviceRequest['details'],
+        "location": serviceRequest['location'],
+        "startDate": DateTime.parse(serviceRequest['startDate']!),
+        "endDate": DateTime.parse(serviceRequest['endDate']!),
+        "budgetMin": int.parse(serviceRequest['minBudget']!),
+        "budgetMax": int.parse(serviceRequest['maxBudget']!),
+        "comments": serviceRequest['additionalComment'],
         "status": "service request",
       });
 
       // Initialize "pending quotation" document
       await projectRef.collection("data").doc("pending quotation").set({
-        "dateCreated": FieldValue.serverTimestamp(),
+        "createdAt": FieldValue.serverTimestamp(),
         "details": "",
         "startDate": null,
         "endDate": null,
@@ -95,7 +94,7 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
 
       // Initialize "quotation" document
       await projectRef.collection("data").doc("quotation").set({
-        "dateCreated": FieldValue.serverTimestamp(),
+        "createdAt": FieldValue.serverTimestamp(),
         "details": "",
         "startDate": null,
         "endDate": null,
@@ -114,6 +113,11 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
   }
 
   void onContinue() {
+    for (String key in serviceRequest.keys) {
+      print("$key: ${serviceRequest[key]}");
+    }
+
+    createProjectDocument();
     //TODO: Implement sending service request to firebase firestore
   }
 
@@ -134,11 +138,18 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: LargeOrangeButton.onlyText(
-          context,
-          onPressed: isServiceRequestValid() ? onContinue : null,
-          text: 'Send Request',
-        ),
+        child: Stack(children: [
+          Container(
+            height: 70,
+            width: double.infinity,
+            color: Colors.grey[900],
+          ),
+          LargeOrangeButton.onlyText(
+            context,
+            onPressed: onContinue,
+            text: 'Send Request',
+          ),
+        ]),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
@@ -201,6 +212,39 @@ class ServiceRequestBody extends StatefulWidget {
 }
 
 class _ServiceRequestBodyState extends State<ServiceRequestBody> {
+  late TextEditingController projectNameController;
+  late TextEditingController serviceDetailsController;
+  late TextEditingController locationController;
+  late TextEditingController additionalCommentsController;
+
+  @override
+  void initState() {
+    projectNameController = TextEditingController();
+    serviceDetailsController = TextEditingController();
+    locationController = TextEditingController();
+    additionalCommentsController = TextEditingController();
+
+    projectNameController.addListener(() {
+      widget.serviceRequest['projectName'] = projectNameController.text;
+      widget.updateMap(widget.serviceRequest);
+    });
+    serviceDetailsController.addListener(() {
+      widget.serviceRequest['details'] = serviceDetailsController.text;
+      widget.updateMap(widget.serviceRequest);
+    });
+    locationController.addListener(() {
+      widget.serviceRequest['location'] = locationController.text;
+      widget.updateMap(widget.serviceRequest);
+    });
+    additionalCommentsController.addListener(() {
+      widget.serviceRequest['additionalComment'] =
+          additionalCommentsController.text;
+      widget.updateMap(widget.serviceRequest);
+    });
+
+    super.initState();
+  }
+
   void onServiceSelect(String service) {
     setState(() {
       widget.serviceRequest['service'] = service;
@@ -221,7 +265,7 @@ class _ServiceRequestBodyState extends State<ServiceRequestBody> {
         top: 56,
         left: 30,
         right: 30,
-        bottom: 50,
+        bottom: 150,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +274,8 @@ class _ServiceRequestBodyState extends State<ServiceRequestBody> {
         children: [
           const TitleSection(title: 'Project Name', isRequired: true),
           TextInputBox(
-            controller: TextEditingController(),
+            controller: projectNameController,
+            maxLines: 1,
             hintText: 'Enter project name',
           ),
           const Separator(),
@@ -241,8 +286,45 @@ class _ServiceRequestBodyState extends State<ServiceRequestBody> {
           const Separator(),
           const TitleSection(title: 'Service Details', isRequired: true),
           TextInputBox(
-            controller: TextEditingController(),
-            hintText: 'Enter service details',
+            controller: serviceDetailsController,
+            hintText: 'Tell us more about your project',
+          ),
+          const Separator(),
+          const TitleSection(title: 'Location', isRequired: true),
+          TextInputBox(
+            controller: locationController,
+            hintText: 'Where is your project located?',
+            maxLines: 1,
+          ),
+          const Separator(),
+          const TitleSection(title: 'Timeline', isRequired: true),
+          DateRangePicker(
+            setStartDate: (value) {
+              widget.serviceRequest['startDate'] = value.toString();
+              widget.updateMap(widget.serviceRequest);
+            },
+            setEndDate: (value) {
+              widget.serviceRequest['endDate'] = value.toString();
+              widget.updateMap(widget.serviceRequest);
+            },
+          ),
+          const Separator(),
+          const TitleSection(title: 'Budget', isRequired: true),
+          BudgetPicker(
+            changeMinBudget: (value) {
+              widget.serviceRequest['minBudget'] = value;
+              widget.updateMap(widget.serviceRequest);
+            },
+            changeMaxBudget: (value) {
+              widget.serviceRequest['maxBudget'] = value;
+              widget.updateMap(widget.serviceRequest);
+            },
+          ),
+          const Separator(),
+          const TitleSection(title: 'Additional Comments', isRequired: false),
+          TextInputBox(
+            controller: additionalCommentsController,
+            hintText: 'Anything else you\'d like us to know?',
           ),
         ],
       ),
@@ -326,6 +408,10 @@ class ServiceSelectionMenu extends StatelessWidget {
             label: service,
           ),
       ],
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 15,
+      ),
       menuStyle: MenuStyle(
         maximumSize: WidgetStateProperty.all(Size.fromWidth(350)),
         backgroundColor:
@@ -348,14 +434,17 @@ class TextInputBox extends StatelessWidget {
     super.key,
     required this.controller,
     required this.hintText,
+    this.maxLines = 5,
   });
 
   final TextEditingController controller;
   final String hintText;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      maxLines: maxLines,
       controller: controller,
       style: const TextStyle(
         color: Colors.white,
@@ -364,6 +453,209 @@ class TextInputBox extends StatelessWidget {
       decoration: ProjectTheme.inputDecoration(context).copyWith(
         hintText: hintText,
       ),
+    );
+  }
+}
+
+class DateRangePicker extends StatefulWidget {
+  const DateRangePicker({
+    super.key,
+    required this.setStartDate,
+    required this.setEndDate,
+  });
+
+  final void Function(DateTime) setStartDate;
+  final void Function(DateTime) setEndDate;
+
+  @override
+  _DateRangePickerState createState() => _DateRangePickerState();
+}
+
+class _DateRangePickerState extends State<DateRangePicker> {
+  DateTime? startDate;
+  DateTime? endDate;
+
+  setDate() {
+    if (startDate != null) widget.setStartDate(startDate!);
+    if (endDate != null) widget.setEndDate(endDate!);
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    DateTime initialDate = isStartDate
+        ? (startDate ?? DateTime.now()) // Use today if startDate is null
+        : (endDate ??
+            startDate ??
+            DateTime.now()); // If endDate is null, use startDate or today
+
+    DateTime firstDate = isStartDate
+        ? DateTime(2000) // No restriction for start date
+        : (startDate ?? DateTime(2000)); // If startDate is null, allow any date
+
+    DateTime lastDate = DateTime(2100);
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          startDate = picked;
+          if (endDate != null && endDate!.isBefore(startDate!)) {
+            endDate = null; // Reset end date if it's before start date
+          }
+        } else {
+          endDate = picked;
+        }
+      });
+    }
+    setDate();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildDateCard(
+            context,
+            title: "Start Date",
+            date: startDate,
+            onTap: () => _selectDate(context, true),
+          ),
+        ),
+        const SizedBox(width: 8),
+        const Text("-", style: TextStyle(fontSize: 20, color: Colors.white)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildDateCard(
+            context,
+            title: "End Date",
+            date: endDate,
+            onTap: () => _selectDate(context, false),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateCard(BuildContext context,
+      {required String title, DateTime? date, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 75,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black, // Background color
+          borderRadius: BorderRadius.circular(12),
+          //border: Border.all(color: Colors.grey[700]!,), // Border color
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.calendar_today,
+                    color: Theme.of(context).colorScheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  date != null
+                      ? DateFormat("d MMM").format(date)
+                      : "Select Date",
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: date != null ? Colors.white : Colors.grey),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class BudgetPicker extends StatefulWidget {
+  const BudgetPicker(
+      {super.key,
+      required this.changeMinBudget,
+      required this.changeMaxBudget});
+
+  final void Function(String) changeMinBudget;
+  final void Function(String) changeMaxBudget;
+
+  @override
+  _BudgetPickerState createState() => _BudgetPickerState();
+}
+
+class _BudgetPickerState extends State<BudgetPicker> {
+  final TextEditingController minBudgetController = TextEditingController();
+  final TextEditingController maxBudgetController = TextEditingController();
+
+  @override
+  void dispose() {
+    minBudgetController.dispose();
+    maxBudgetController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildBudgetField(
+            controller: minBudgetController,
+            label: "Min Budget",
+            onChange: widget.changeMinBudget,
+          ),
+        ),
+        const SizedBox(width: 8),
+        const Text("-", style: TextStyle(fontSize: 20, color: Colors.white)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildBudgetField(
+            controller: maxBudgetController,
+            label: "Max Budget",
+            onChange: widget.changeMaxBudget,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBudgetField(
+      {required TextEditingController controller,
+      required String label,
+      required void Function(String) onChange}) {
+    return TextFormField(
+      controller: controller,
+      textInputAction: TextInputAction.done,
+      onChanged: onChange,
+      keyboardType: TextInputType.number, // Numeric keyboard
+      decoration: ProjectTheme.inputDecoration(context).copyWith(
+        hintText: label,
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return "Enter a value";
+        }
+        final intValue = int.tryParse(value);
+        if (intValue == null) {
+          return "Enter a valid number";
+        }
+        return null;
+      },
     );
   }
 }

@@ -10,3 +10,4 @@ export 'overlays/custom_snackbar.dart';
 export 'widgets/text_field.dart';
 export 'widgets/circular_profile_picture.dart';
 export 'wrappers/data_wrappers.dart';
+export 'buttons/default_square_button.dart';

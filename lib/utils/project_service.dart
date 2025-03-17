@@ -19,7 +19,7 @@ Future<List<Map<String, dynamic>>> fetchOngoingProjects({
         .collection("projects")
         .where(userField, isEqualTo: currentUserId)
         .orderBy("createdAt", descending: true) // Sort by latest
-        .limit(limit) // Fetch only the latest 3 projects
+        .limit(10) // Fetch only the latest 3 projects
         .get();
 
     print("📂 Found ${projectSnapshot.docs.length} matching projects");
@@ -64,7 +64,7 @@ Future<Map<String, dynamic>?> _fetchProjectDetails(
         .collection("data")
         .orderBy("createdAt", descending: true)
         .limit(1)
-        .get();
+        .get(); 
 
     if (dataSnapshot.docs.isEmpty) {
       print("❌ No 'data' found for project: $projectId");

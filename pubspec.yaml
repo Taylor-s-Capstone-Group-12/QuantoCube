@@ -54,6 +54,8 @@ dependencies:
   json_annotation: ^4.9.0
   flutter_dotenv: ^5.2.1
   signature: ^6.0.0
+  app_bar_with_search_switch: ^1.8.6
+  intl: ^0.20.2
   
 
 dev_dependencies:

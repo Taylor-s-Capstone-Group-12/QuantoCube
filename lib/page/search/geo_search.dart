@@ -16,11 +16,20 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
   final LatLng _defaultCenter =
       const LatLng(3.1390, 101.6869); // KL Coordinates
   LatLng? _currentUserLocation;
-  double _selectedDistance = 10.0; // Default radius (km)
+  double _selectedDistance = 20.0; // Default radius (km)
+
+  // 1) Add a list to hold nearby users for the bottom carousel
+  List<Map<String, dynamic>> _nearbyUsers = [];
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _fetchUserLocation();
+  }
+
+  @override
+  void dispose() {
+    mapController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchUserLocation() async {
@@ -48,14 +57,17 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
               markerId: MarkerId(userId),
               position: _currentUserLocation!,
               infoWindow: InfoWindow(title: "You"),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
             ),
           );
 
           mapController.animateCamera(
-              CameraUpdate.newLatLngZoom(_currentUserLocation!, 11.0));
+            CameraUpdate.newLatLngZoom(_currentUserLocation!, 11.0),
+          );
         });
 
-        _fetchNearbyUsers(); // Fetch users after getting current location
+        // Fetch users after getting current location
+        _fetchNearbyUsers();
       } else {
         print("❌ User location not found in Firestore.");
       }
@@ -73,11 +85,12 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
     print("🔍 Searching users within ${_selectedDistance.toInt()} km");
 
     final collectionReference = FirebaseFirestore.instance.collection('users');
-
-    final GeoFirePoint center = GeoFirePoint(GeoPoint(
-      _currentUserLocation!.latitude,
-      _currentUserLocation!.longitude,
-    ));
+    final GeoFirePoint center = GeoFirePoint(
+      GeoPoint(
+        _currentUserLocation!.latitude,
+        _currentUserLocation!.longitude,
+      ),
+    );
 
     GeoPoint geopointFrom(Map<String, dynamic> data) {
       if (data.containsKey('geo') &&
@@ -89,12 +102,11 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
           "❌ Invalid location data for ${data['name'] ?? 'Unknown'}");
     }
 
-    // ✅ Apply correction factor (÷3.506) in query
     final Stream<List<DocumentSnapshot<Map<String, dynamic>>>> stream =
         GeoCollectionReference<Map<String, dynamic>>(collectionReference)
             .subscribeWithin(
       center: center,
-      radiusInKm: _selectedDistance / 3.506,
+      radiusInKm: _selectedDistance / 3.506, // ✅ Correction factor applied
       field: 'geo',
       geopointFrom: geopointFrom,
     );
@@ -103,6 +115,8 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
       print("📌 Found ${docs.length} users before filtering");
       int filteredCount = 0;
       int totalCount = docs.length;
+
+      final List<Map<String, dynamic>> tempUsers = [];
 
       setState(() {
         _markers.removeWhere((marker) =>
@@ -118,6 +132,11 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
                 LatLng(geopoint.latitude, geopoint.longitude);
             final String username = data['name'] ?? 'Unknown';
 
+            // ✅ Skip adding the logged-in user
+            if (doc.id == FirebaseAuth.instance.currentUser?.uid) {
+              continue;
+            }
+
             // ✅ Apply manual distance filtering
             final double actualDistance = _calculateDistance(
               _currentUserLocation!.latitude,
@@ -128,7 +147,16 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
 
             if (actualDistance <= _selectedDistance) {
               print(
-                  "✅ User in range (${actualDistance.toStringAsFixed(2)} km): $username");
+                "✅ User in range (${actualDistance.toStringAsFixed(2)} km): $username",
+              );
+
+              tempUsers.add({
+                'uuid': doc.id,
+                'name': username,
+                'distance': actualDistance,
+                'role': 'Renovator', // Placeholder
+                'rating': 4.6, // Placeholder rating
+              });
 
               _markers.add(
                 Marker(
@@ -139,13 +167,19 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
               );
             } else {
               print(
-                  "❌ User filtered out (${actualDistance.toStringAsFixed(2)} km): $username");
+                "❌ User filtered out (${actualDistance.toStringAsFixed(2)} km): $username",
+              );
               filteredCount++;
             }
           } catch (e) {
             print("⚠ Error processing user ${doc.id}: $e");
           }
         }
+
+        // Sort the temp list by distance, nearest first
+        tempUsers.sort((a, b) => a['distance'].compareTo(b['distance']));
+        _nearbyUsers = tempUsers;
+
         print("🔎 Debug: $filteredCount filtered out of $totalCount users");
       });
     });
@@ -171,6 +205,56 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
     return degrees * (pi / 180);
   }
 
+
+void _flashMarker(String markerId) async {
+  // Find the marker
+  Marker? targetMarker = _markers.firstWhere(
+    (marker) => marker.markerId.value == markerId,
+    orElse: () => Marker(markerId: MarkerId('not_found')),
+  );
+
+  if (targetMarker.markerId.value == 'not_found') {
+    print("❌ Marker not found!");
+    return;
+  }
+
+  LatLng position = targetMarker.position;
+
+  // Define the colors to flash between
+  List<BitmapDescriptor> colors = [
+    BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+    BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+  ];
+
+  for (int i = 0; i < 4; i++) {
+    setState(() {
+      _markers.removeWhere((m) => m.markerId.value == markerId);
+      _markers.add(
+        Marker(
+          markerId: MarkerId(markerId),
+          position: position,
+          icon: colors[i % 2], // Alternate between two colors
+        ),
+      );
+    });
+
+    await Future.delayed(Duration(milliseconds: 300)); // Delay between flashes
+  }
+
+  // Restore original marker
+  setState(() {
+    _markers.removeWhere((m) => m.markerId.value == markerId);
+    _markers.add(
+      Marker(
+        markerId: MarkerId(markerId),
+        position: position,
+        icon: BitmapDescriptor.defaultMarker, // Restore original color
+      ),
+    );
+  });
+
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,6 +264,7 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
       ),
       body: Stack(
         children: [
+          // 3) Keep your original GoogleMap and distance UI
           GoogleMap(
             onMapCreated: _onMapCreated,
             initialCameraPosition: CameraPosition(
@@ -202,14 +287,16 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
                   Text(
                     "Distance: ${_selectedDistance.toInt()} km",
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   SizedBox(height: 5),
                   Slider(
                     value: _selectedDistance,
                     min: 10,
-                    max: 50,
-                    divisions: 40, // 5km steps (5, 10, 15, ... 50)
+                    max: 30,
+                    divisions: 20, // 5km steps (5, 10, 15, ... 50)
                     label: "${_selectedDistance.toStringAsFixed(2)} km",
                     activeColor: Color(0xFFFE5823), // Orange
                     inactiveColor: Colors.white30,
@@ -226,8 +313,123 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
               ),
             ),
           ),
+
+          // 4) Add the carousel overlay at the bottom
+          Positioned(
+            bottom: 10,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 160, // adjust as needed
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _nearbyUsers.length,
+                itemBuilder: (context, index) {
+                  final user = _nearbyUsers[index];
+                  return _buildCarouselCard(user);
+                },
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+
+  // 5) Helper widget to build each carousel card
+  Widget _buildCarouselCard(Map<String, dynamic> user) {
+  return Container(
+    width: 220,
+    margin: EdgeInsets.symmetric(horizontal: 8),
+    padding: EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: Colors.black87,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundImage: AssetImage('assets/avatar_placeholder.png'),
+            ),
+            SizedBox(width: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                user['role'] ?? 'Role',
+                style: TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 4),
+        Text(
+          user['name'] ?? 'Unknown',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          'Ad • ${user['distance']?.toStringAsFixed(1) ?? '--'} km  ★ ${user['rating'] ?? '--'}',
+          style: TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        SizedBox(height: 5),
+
+        // New Locate Button
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: Icon(Icons.my_location, color: Colors.blueAccent),
+              onPressed: () {
+                String contractorId = user['uuid'];
+                
+                // ✅ Find the matching marker in _markers 
+                Marker? contractorMarker = _markers.firstWhere(
+                  (marker) => marker.markerId.value == contractorId,
+                  orElse: () => Marker(markerId: MarkerId('not_found')), // Fallback
+                );
+
+                if (contractorMarker.markerId.value != 'not_found') {
+                  print("📍 Moving camera to contractor ${user['name']}");
+    
+                  mapController.animateCamera(
+                    CameraUpdate.newLatLngZoom(contractorMarker.position, 14.0),
+                  );
+
+                   _flashMarker(user['uuid']);
+                } else {
+                  print("❌ Contractor marker not found!");
+                }
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.arrow_forward, color: Color(0xFFFE5823)),
+              onPressed: () {
+                if (user['uuid'] != null) {
+                  Navigator.pushNamed(
+                    context,
+                    '/homeowner/contractor_profile_page',
+                    arguments: user['uuid'],
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
 }

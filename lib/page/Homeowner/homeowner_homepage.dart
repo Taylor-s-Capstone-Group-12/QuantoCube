@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quantocube/page/homeowner/find_pros.dart';
+import 'package:quantocube/utils/project_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeownerHomePage extends StatelessWidget {
   const HomeownerHomePage({super.key});
@@ -21,7 +24,12 @@ class HomeownerHomePage extends StatelessWidget {
               const SizedBox(height: 20),
               _buildFindProsButton(context),
               const SizedBox(height: 20),
-              _buildOngoingProjects(),
+              _buildOngoingProjects(
+                FirebaseAuth.instance.currentUser!
+                    .uid, // Pass the user's ID dynamically
+                true, // Change to false if the user is a contractor
+                3, // Number of projects to fetch
+              ),
               const SizedBox(height: 20),
               _buildFeaturedContractors(),
               const SizedBox(height: 20),
@@ -127,61 +135,159 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildOngoingProjects() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Ongoing Project",
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        _buildProjectCard("Quoted", Icons.attach_money, Colors.yellow[700]!),
-        const SizedBox(height: 10),
-        _buildProjectCard("In Progress", Icons.work, Colors.blue),
-      ],
+  // Widget _buildOngoingProjects() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       const Text("Ongoing Project",
+  //           style: TextStyle(
+  //               color: Colors.white,
+  //               fontSize: 20,
+  //               fontWeight: FontWeight.bold)),
+  //       const SizedBox(height: 10),
+  //       _buildProjectCard("Quoted", Icons.attach_money, Colors.yellow[700]!),
+  //       const SizedBox(height: 10),
+  //       _buildProjectCard("In Progress", Icons.work, Colors.blue),
+  //     ],
+  //   );
+  // }
+
+  /// 🔹 Builds the Ongoing Projects UI dynamically
+  Widget _buildOngoingProjects(
+      String currentUserId, bool isHomeowner, int fetchLimit) {
+    print(
+        "Fetching ongoing projects for userId: $currentUserId, isHomeowner: $isHomeowner, limit: $fetchLimit");
+
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: fetchOngoingProjects(
+        currentUserId: currentUserId,
+        isHomeowner: isHomeowner,
+        limit: fetchLimit,
+      ),
+      builder: (context, snapshot) {
+        print("FutureBuilder state: ${snapshot.connectionState}");
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          print("Loading ongoing projects...");
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          print("Error fetching projects: ${snapshot.error}");
+          return const Text(
+            "Error loading projects",
+            style: TextStyle(color: Colors.red, fontSize: 16),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          print("No ongoing projects found.");
+          return const Text(
+            "No ongoing projects",
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          );
+        }
+
+        List<Map<String, dynamic>> projects = snapshot.data!;
+        print("Fetched ${projects.length} projects.");
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Ongoing Projects",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            ...projects.map((project) {
+              print("Rendering project: ${project["name"]}");
+              return _buildProjectCard(                                                                                                
+                project["name"],
+                project["otherUserName"]??"empty",
+                project["status"],
+                project["createdAt"],
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildProjectCard(String status, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: color,
-            child: Icon(icon, color: Colors.white),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Project #9876",
-                  style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                ),
-                Text(
-                  status,
-                  style: const TextStyle(color: Colors.white, fontSize: 18),
-                ),
-                Text(
-                  "22 Jun - Jackson Hon",
-                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                ),
-              ],
+  /// 🔹 Builds a Single Project Card
+  Widget _buildProjectCard(String projectName, String otherUserName,
+      String status, Timestamp createdAt) {
+    return Card(
+      color: Colors.grey[900],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: ListTile(
+        title: Text(
+          projectName,
+          style: const TextStyle(
+              color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Partner: $otherUserName",
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
-          ),
-          const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
-        ],
+            Text(
+              "Status: $status",
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            Text(
+              "Created: ${formatDate(createdAt)}",
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  // Widget _buildProjectCard(String status, IconData icon, Color color) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(12),
+  //     decoration: BoxDecoration(
+  //       color: Colors.grey[900],
+  //       borderRadius: BorderRadius.circular(12),
+  //     ),
+  //     child: Row(
+  //       children: [
+  //         CircleAvatar(
+  //           backgroundColor: color,
+  //           child: Icon(icon, color: Colors.white),
+  //         ),
+  //         const SizedBox(width: 10),
+  //         Expanded(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Text(
+  //                 "Project #9876",
+  //                 style: TextStyle(color: Colors.grey[400], fontSize: 14),
+  //               ),
+  //               Text(
+  //                 status,
+  //                 style: const TextStyle(color: Colors.white, fontSize: 18),
+  //               ),
+  //               Text(
+  //                 "22 Jun - Jackson Hon",
+  //                 style: TextStyle(color: Colors.grey[500], fontSize: 14),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //         const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildFeaturedContractors() {
     return Column(

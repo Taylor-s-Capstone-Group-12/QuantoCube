@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 class CircularProfilePicture extends StatefulWidget {
-  final String imageUrl; // Profile picture URL
+  final String? imageUrl; // Profile picture URL
   final double? radius; // Size of the profile picture
 
   const CircularProfilePicture({
     super.key,
-    required this.imageUrl,
+    this.imageUrl,
     this.radius = 60,
   });
 
@@ -27,7 +27,7 @@ class _CircularProfilePictureState extends State<CircularProfilePicture> {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: widget.radius,
-      backgroundImage: NetworkImage(widget.imageUrl),
+      backgroundImage: NetworkImage(widget.imageUrl ?? ''),
       backgroundColor: Theme.of(context).colorScheme.primary,
       onBackgroundImageError: (object, stackTrace) => onError(),
       child: imgError

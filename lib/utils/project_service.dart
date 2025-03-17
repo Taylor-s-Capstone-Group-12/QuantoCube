@@ -85,6 +85,7 @@ Future<Map<String, dynamic>?> _fetchProjectDetails(FirebaseFirestore firestore,
     String otherUserName = await _fetchUserName(firestore, otherUserId);
 
     return {
+      "projectId": projectId,
       "name": detailsData["name"] ?? "Unnamed Project",
       "createdAt": parentCreatedAt, // ✅ Use parent document's createdAt
       "status": detailsData["status"] ?? "Unknown",

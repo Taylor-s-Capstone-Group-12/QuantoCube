@@ -197,7 +197,7 @@ class HomeownerHomePage extends StatelessWidget {
             const Text(
               "Ongoing Projects",
               style: TextStyle(
-                  color: Colors.white,
+                  color: Color.fromARGB(255, 137, 76, 76),
                   fontSize: 20,
                   fontWeight: FontWeight.bold),
             ),
@@ -205,6 +205,8 @@ class HomeownerHomePage extends StatelessWidget {
             ...projects.map((project) {
               print("Rendering project: ${project["name"]}");
               return _buildProjectCard(
+                context,
+                project["projectId"],
                 project["name"],
                 project["otherUserName"] ?? "empty",
                 project["status"],
@@ -251,24 +253,26 @@ class HomeownerHomePage extends StatelessWidget {
   // }
 
   String _formatStatus(String status) {
-  // Handle empty status
-  if (status.isEmpty) return '';
-  
-  // Add a space before each capital letter (except the first one)
-  String spaced = status.replaceAllMapped(
-    RegExp(r'(?<=[a-z])[A-Z]'),
-    (match) => ' ${match.group(0)}'
-  );
-  
-  // Capitalize first letter and return
-  return spaced[0].toUpperCase() + spaced.substring(1);
-}
+    // Handle empty status
+    if (status.isEmpty) return '';
+
+    // Add a space before each capital letter (except the first one)
+    String spaced = status.replaceAllMapped(
+        RegExp(r'(?<=[a-z])[A-Z]'), (match) => ' ${match.group(0)}');
+
+    // Capitalize first letter and return
+    return spaced[0].toUpperCase() + spaced.substring(1);
+  }
 
   /// 🔹 Builds a Modern Project Card
-  Widget _buildProjectCard(String projectName, String otherUserName,
-      String status, Timestamp createdAt) {
-    String imageUrl = ""; // Placeholder for image URL (Replace later)
-
+  /// 🔹 Builds a Modern Project Card
+  Widget _buildProjectCard(
+      BuildContext context,
+      String projectId,
+      String projectName,
+      String otherUserName,
+      String status,
+      Timestamp createdAt) {
     return Container(
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -330,8 +334,18 @@ class HomeownerHomePage extends StatelessWidget {
             ),
           ),
 
-          // 🔹 Arrow Button
-          const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+          // 🔹 Arrow Button (Now correctly using context and projectId)
+          IconButton(
+            icon: const Icon(Icons.arrow_forward_ios,
+                color: Colors.white, size: 16),
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/project_chat',
+                arguments: projectId, // Pass the correct projectId
+              );
+            },
+          )
         ],
       ),
     );

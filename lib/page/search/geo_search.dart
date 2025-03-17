@@ -57,6 +57,7 @@ class _GeoSearchPageState extends State<GeoSearchPage> {
               markerId: MarkerId(userId),
               position: _currentUserLocation!,
               infoWindow: InfoWindow(title: "You"),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
             ),
           );
 

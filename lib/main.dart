@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'package:quantocube/page/homeowner/listing/hire_contractor_page.dart';
+import 'package:quantocube/page/homeowner/listing/service_request_page.dart';
 import 'package:quantocube/page/messaging/chat_list_page.dart';
 import 'package:quantocube/page/onboarding/splash_screen.dart';
 import 'package:quantocube/tests/sample_classes.dart';
@@ -48,7 +48,10 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ProjectTheme.theme,
-      home: const SplashScreen(),
+      home: ServiceRequestPage(
+        userID: '00',
+        contractorID: '01',
+      ),
       navigatorObservers: [
         KeyboardDismissNavigatorObserver(),
       ],

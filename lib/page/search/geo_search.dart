@@ -260,7 +260,7 @@ void _flashMarker(String markerId) async {
     return Scaffold(
       appBar: AppBar(
         title: Text('Your Location'),
-        backgroundColor: Colors.green[700],
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
       body: Stack(
         children: [

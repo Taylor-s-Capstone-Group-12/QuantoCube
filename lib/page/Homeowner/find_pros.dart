@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:quantocube/page/homeowner/subcategory_page.dart';
+import 'package:quantocube/page/Homeowner/subcategory_page.dart';
+import 'package:quantocube/page/Homeowner/homeowner_homepage.dart';
+import 'package:quantocube/page/Homeowner/project_page.dart';
+
 
 class FindProsPage extends StatefulWidget {
   const FindProsPage({super.key});
@@ -36,6 +39,39 @@ class _FindProsPageState extends State<FindProsPage> {
   ];
 
   @override
+  Widget _buildBottomNavBar(BuildContext context, int currentIndex) {
+  return BottomNavigationBar(
+    backgroundColor: Colors.black,
+    selectedItemColor: Colors.orange,
+    unselectedItemColor: Colors.white,
+    currentIndex: currentIndex, // Ensures the correct tab is highlighted
+    onTap: (index) {
+      if (index == 0 && currentIndex != 0) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeownerHomePage()),
+          (route) => false, // Clears navigation stack
+        );
+      } else if (index == 1 && currentIndex != 1) {
+        Navigator.pushNamed(context, '/messages');
+      } else if (index == 2 && currentIndex != 2) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const FindProsPage()),
+        );
+      } else if (index == 3 && currentIndex != 3) {
+        Navigator.pushNamed(context, '/profile');
+      }
+    },
+    items: const [
+      BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.message), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: ''), // Find Pros
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+    ],
+  );
+}
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -129,17 +165,8 @@ class _FindProsPageState extends State<FindProsPage> {
       ),
 
       // ✅ Bottom Navigation Bar
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.orange,
-        unselectedItemColor: Colors.white,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.message), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-        ],
-      ),
+      bottomNavigationBar: _buildBottomNavBar(context, 2), // 2 = FindProsPage
+
     );
   }
 

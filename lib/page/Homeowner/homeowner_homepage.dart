@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:quantocube/page/homeowner/find_pros.dart';
+import 'package:quantocube/page/Homeowner/homeowner_homepage.dart';
+import 'package:quantocube/page/Homeowner/find_pros.dart';
+import 'package:quantocube/page/Homeowner/project_page.dart';
+
 
 class HomeownerHomePage extends StatelessWidget {
   const HomeownerHomePage({super.key});
@@ -31,7 +34,7 @@ class HomeownerHomePage extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
+      bottomNavigationBar: _buildBottomNavBar(context),
     );
   }
 
@@ -257,17 +260,39 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNavBar() {
-    return BottomNavigationBar(
-      backgroundColor: Colors.black,
-      selectedItemColor: Colors.orange,
-      unselectedItemColor: Colors.white,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.message), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-      ],
-    );
-  }
+
+Widget _buildBottomNavBar(BuildContext context) {
+  return BottomNavigationBar(
+    backgroundColor: Colors.black,
+    selectedItemColor: Colors.orange,
+    unselectedItemColor: Colors.white,
+    onTap: (index) {
+      if (index == 0) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeownerHomePage()),
+          (route) => false, // Clears navigation stack
+        );
+      } else if (index == 1) {
+        Navigator.pushNamed(context, '/messages');
+      } else if (index == 2) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProjectPage()),
+        );
+      } else if (index == 3) {
+        Navigator.pushNamed(context, '/profile');
+      }
+    },
+    items: const [
+      BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.message), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+    ],
+  );
+}
+
+
+
 }

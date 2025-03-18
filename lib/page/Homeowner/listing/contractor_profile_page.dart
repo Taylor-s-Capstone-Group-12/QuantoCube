@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:quantocube/components/components.dart';
 
 class ContractorProfilePage extends StatefulWidget {
   final String contractorId;
@@ -128,8 +130,11 @@ class _ContractorProfilePageState extends State<ContractorProfilePage> {
                     data: contractorData!,
                     averageRating: averageRating,
                     totalRatings: totalRatings),
-                SizedBox(height: 16),
-                ContractorActionBar(data: contractorData!),
+                const SizedBox(height: 16),
+                ContractorActionBar(
+                  data: contractorData!,
+                  contractorId: widget.contractorId,
+                ),
               ],
             ),
           DraggableScrollableSheet(
@@ -235,9 +240,9 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        CircleAvatar(
+        CircularProfilePicture(
           radius: 40,
-          backgroundImage: NetworkImage(data['profilePicture'] ?? ''),
+          imageUrl: data['profilePicture'],
         ),
         SizedBox(height: 8),
         Text(
@@ -346,25 +351,31 @@ class InfoGrid extends StatelessWidget {
 
 class ContractorActionBar extends StatelessWidget {
   final Map<String, dynamic> data;
+  final String contractorId;
 
-  ContractorActionBar({required this.data});
+  const ContractorActionBar({
+    super.key,
+    required this.data,
+    required this.contractorId,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ElevatedButton(
-          onPressed: () {},
-          child: Text("Follow"),
-        ),
-        SizedBox(width: 8),
-        ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-          child: Text("Hire", style: TextStyle(color: Colors.white)),
-        ),
-      ],
+    RequestServiceArgs args = RequestServiceArgs(
+      contractorId: contractorId,
+      homeownerId: FirebaseAuth.instance.currentUser?.uid ?? '',
+    );
+
+    return SizedBox(
+      width: 161,
+      child: DefaultSquareButton.onlyText(
+        context,
+        text: 'Hire',
+        onPressed: () {
+          Navigator.pushNamed(context, '/request_service', arguments: args);
+        },
+        height: 45,
+      ),
     );
   }
 }

@@ -80,3 +80,54 @@ List<ChatPreview> sampleChatPreviews = [
     isOnline: false,
   ),
 ];
+
+List<Map<String, dynamic>> sampleChatData = [
+  // March 15, 2025
+  {
+    'type': 'message',
+    'message': 'Hey, how are you?',
+    'isSender': 'true',
+    'date': DateTime(2025, 3, 15, 9, 15), // March 15, 9:15 AM
+  },
+  {
+    'type': 'message',
+    'message': 'I’m good, thanks! You?',
+    'isSender': 'false',
+    'date': DateTime(2025, 3, 15, 9, 17), // March 15, 9:17 AM
+  },
+  {
+    'type': 'message',
+    'message': 'Just working on my Flutter project.',
+    'isSender': 'true',
+    'date': DateTime(2025, 3, 15, 10, 00), // March 15, 10:00 AM
+  },
+
+  // March 16, 2025
+  {
+    'type': 'message',
+    'message': 'Nice! Have you tried Firebase for real-time updates?',
+    'isSender': 'false',
+    'date': DateTime(2025, 3, 16, 14, 30), // March 16, 2:30 PM
+  },
+  {
+    'type': 'attachment',
+    'message': 'Sent a file: project_notes.pdf',
+    'isSender': 'true',
+    'onTap': () {}, // Simulated file tap action
+    'date': DateTime(2025, 3, 16, 14, 35), // March 16, 2:35 PM
+  },
+
+  // March 17, 2025
+  {
+    'type': 'message',
+    'message': 'Hey, are you free for a call later?',
+    'isSender': 'false',
+    'date': DateTime(2025, 3, 17, 18, 00), // March 17, 6:00 PM
+  },
+  {
+    'type': 'message',
+    'message': 'Yeah, let’s do it at 8 PM.',
+    'isSender': 'true',
+    'date': DateTime(2025, 3, 17, 18, 10), // March 17, 6:10 PM
+  },
+];

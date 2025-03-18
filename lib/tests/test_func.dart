@@ -9,3 +9,9 @@ void reviewMap(Map<dynamic, dynamic> map) {
     print('=' * 10 + 'Review Map' '=' * 10);
   }
 }
+
+void kPrint(String message) {
+  if (kDebugMode) {
+    print(message);
+  }
+}

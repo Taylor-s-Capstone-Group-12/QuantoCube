@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
 
 class NameSearchPage extends StatefulWidget {
   @override
@@ -9,21 +10,18 @@ class NameSearchPage extends StatefulWidget {
 }
 
 class _NameSearchPageState extends State<NameSearchPage> {
-  final ScrollController _scrollController = ScrollController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  List<Map<String, dynamic>> _contractors = []; // Store with distance
-  bool _isLoading = false;
-  bool _hasMore = true;
+  List<Map<String, dynamic>> _contractors = [];
+  List<Map<String, dynamic>> _filteredContractors = [];
   String _searchTerm = '';
-  DocumentSnapshot? _lastDocument;
-  GeoPoint? _currentUserLocation; // Store user's GeoPoint
+  GeoPoint? _currentUserLocation;
+  double _distanceMin = 0;
+  double _distanceMax = 50;
 
   @override
   void initState() {
     super.initState();
     _fetchUserLocation();
-    _scrollController.addListener(_scrollListener);
   }
 
   Future<void> _fetchUserLocation() async {
@@ -41,68 +39,107 @@ class _NameSearchPageState extends State<NameSearchPage> {
     }
   }
 
-  Future<void> _fetchContractors({bool isNewSearch = false}) async {
-    if (_isLoading || !_hasMore || _currentUserLocation == null) return;
-    setState(() => _isLoading = true);
-
-    Query query = _firestore
-        .collection('users')
-        .where('isHomeowner', isEqualTo: false)
-        .orderBy('name')
-        .limit(10);
-
-    if (_lastDocument != null && !isNewSearch) {
-      query = query.startAfterDocument(_lastDocument!);
+  Future<void> _fetchContractors() async {
+    if (_currentUserLocation == null) {
+      print("⚠ _fetchContractors called but _currentUserLocation is null!");
+      return;
     }
 
-    QuerySnapshot snapshot = await query.get();
-    List<DocumentSnapshot> newDocs = snapshot.docs;
+    print(
+        "🔍 Searching contractors between ${_distanceMin.toInt()} km and ${_distanceMax.toInt()} km");
 
-    if (isNewSearch) {
-      _contractors.clear();
-      _lastDocument = null;
-      _hasMore = true;
-    }
-
-    if (newDocs.isNotEmpty) {
-      _lastDocument = newDocs.last;
-    } else {
-      _hasMore = false;
-    }
-
-    List<Map<String, dynamic>> tempContractors = [];
-
-    for (var doc in newDocs) {
-      final data = doc.data() as Map<String, dynamic>?;
-
-      if (data == null ||
-          data['geo'] == null ||
-          data['geo']['geopoint'] == null) {
-        continue;
-      }
-
-      GeoPoint contractorLocation = data['geo']['geopoint'];
-      double distance = _calculateDistance(
+    final collectionReference = FirebaseFirestore.instance.collection('users');
+    final GeoFirePoint center = GeoFirePoint(
+      GeoPoint(
         _currentUserLocation!.latitude,
         _currentUserLocation!.longitude,
-        contractorLocation.latitude,
-        contractorLocation.longitude,
-      );
+      ),
+    );
 
-      tempContractors.add({
-        'uuid': doc.id,
-        'name': data['name'] ?? 'Unknown',
-        'imageUrl': data['profileImage'] ?? '', // Contractor profile image
-        'rating': data['rating'] ?? 4.6, // Default rating if missing
-        'distance': distance, // Calculated distance
-      });
+    GeoPoint geopointFrom(Map<String, dynamic> data) {
+      if (data.containsKey('geo') &&
+          data['geo'] is Map<String, dynamic> &&
+          data['geo'].containsKey('geopoint')) {
+        return data['geo']['geopoint'] as GeoPoint;
+      }
+      throw Exception(
+          "❌ Invalid location data for ${data['name'] ?? 'Unknown'}");
     }
 
-    tempContractors.sort((a, b) => a['distance'].compareTo(b['distance']));
+    final Stream<List<DocumentSnapshot<Map<String, dynamic>>>> stream =
+        GeoCollectionReference<Map<String, dynamic>>(collectionReference)
+            .subscribeWithin(
+      center: center,
+      radiusInKm: _distanceMax / 2.506, // ✅ Correction factor applied
+      field: 'geo',
+      geopointFrom: geopointFrom,
+    );
 
-    setState(() {
-      _contractors.addAll(tempContractors);
-      _isLoading = false;
+    stream.listen((docs) {
+      print("📌 Found ${docs.length} contractors before filtering");
+      int filteredOutMin = 0;
+      int filteredOutMax = 0;
+      int totalCount = docs.length;
+
+      final List<Map<String, dynamic>> tempContractors = [];
+
+      setState(() {
+        for (var doc in docs) {
+          final data = doc.data();
+          if (data == null || data['isHomeowner'] == true) {
+            continue; // ✅ Ensure contractors only
+          }
+
+          try {
+            final GeoPoint geopoint = geopointFrom(data);
+            final double lat = geopoint.latitude;
+            final double lon = geopoint.longitude;
+            final String username = data['name'] ?? 'Unknown';
+
+            // ✅ Apply manual distance filtering
+            final double actualDistance = _calculateDistance(
+              _currentUserLocation!.latitude,
+              _currentUserLocation!.longitude,
+              lat,
+              lon,
+            );
+
+            if (actualDistance >= _distanceMin &&
+                actualDistance <= _distanceMax) {
+              print(
+                "✅ Contractor in range (${actualDistance.toStringAsFixed(2)} km): $username",
+              );
+
+              tempContractors.add({
+                'uuid': doc.id,
+                'name': username,
+                'imageUrl': data['profileImage'] ?? '',
+                'rating': data['rating'] ?? 4.6,
+                'distance': actualDistance,
+              });
+            } else {
+              if (actualDistance < _distanceMin) {
+                print(
+                    "❌ Contractor too close (${actualDistance.toStringAsFixed(2)} km): $username");
+                filteredOutMin++;
+              } else {
+                print(
+                    "❌ Contractor too far (${actualDistance.toStringAsFixed(2)} km): $username");
+                filteredOutMax++;
+              }
+            }
+          } catch (e) {
+            print("⚠ Error processing contractor ${doc.id}: $e");
+          }
+        }
+
+        // Sort the contractors list by distance (nearest first)
+        tempContractors.sort((a, b) => a['distance'].compareTo(b['distance']));
+        _contractors = tempContractors;
+
+        print(
+            "🔎 Debug: $filteredOutMin too close, $filteredOutMax too far out of $totalCount contractors");
+      });
     });
   }
 
@@ -124,24 +161,13 @@ class _NameSearchPageState extends State<NameSearchPage> {
     return degrees * (pi / 180);
   }
 
-  void _scrollListener() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      _fetchContractors();
-    }
-  }
-
   void _onSearchChanged(String value) {
     setState(() {
       _searchTerm = value.toLowerCase();
+      _filteredContractors = _contractors.where((contractor) {
+        return contractor['name'].toLowerCase().contains(_searchTerm);
+      }).toList();
     });
-    _fetchContractors(isNewSearch: true);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   void _showFilterMenu() {
@@ -174,11 +200,17 @@ class _NameSearchPageState extends State<NameSearchPage> {
                       ),
                     ],
                   ),
-                  _buildExpandableSection('Distance', _buildDistanceSlider()),
+                  _buildExpandableSection(
+                      'Distance', _buildDistanceSlider(setModalState)),
                   _buildExpandableSection('Rating', _buildRatingCheckboxes()),
                   SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      setState(() {
+                        _fetchContractors(); // ✅ Refetch contractors with new filters
+                      });
+                      Navigator.pop(context);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                       shape: RoundedRectangleBorder(
@@ -213,42 +245,48 @@ class _NameSearchPageState extends State<NameSearchPage> {
     );
   }
 
-  Widget _buildDistanceSlider() {
-    RangeValues _distanceRange = RangeValues(10, 300);
+  Widget _buildDistanceSlider(Function setModalState) {
+    double sliderMin = 0;
+    double sliderMax = 50;
+    int sliderSteps = (sliderMax - sliderMin).toInt();
 
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Column(
+    return Column(
+      children: [
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: Colors.orange,
+            thumbColor: Colors.orange,
+            overlayColor: Colors.orange.withOpacity(0.2),
+            valueIndicatorColor: Colors.orange,
+            showValueIndicator: ShowValueIndicator.always, // Always show bubble
+          ),
+          child: RangeSlider(
+            values: RangeValues(_distanceMin, _distanceMax),
+            min: sliderMin,
+            max: sliderMax,
+            divisions: sliderSteps, // 1 KM steps
+            labels: RangeLabels(
+              '${_distanceMin.toInt()} KM',
+              '${_distanceMax.toInt()} KM',
+            ),
+            onChanged: (values) {
+              setModalState(() {
+                _distanceMin = values.start;
+                _distanceMax = values.end;
+              });
+            },
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: Colors.orange,
-                thumbColor: Colors.orange,
-                overlayColor: Colors.orange.withOpacity(0.2),
-              ),
-              child: RangeSlider(
-                values: _distanceRange,
-                min: 10,
-                max: 300,
-                onChanged: (values) {
-                  setState(() {
-                    _distanceRange = values;
-                  });
-                },
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('${_distanceRange.start.toInt()} KM',
-                    style: TextStyle(color: Colors.white)),
-                Text('${_distanceRange.end.toInt()} KM',
-                    style: TextStyle(color: Colors.white)),
-              ],
-            ),
+            Text('${sliderMin.toInt()} KM',
+                style: TextStyle(color: Colors.white)), // Min allowed
+            Text('${sliderMax.toInt()} KM',
+                style: TextStyle(color: Colors.white)), // Max allowed
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -309,8 +347,13 @@ class _NameSearchPageState extends State<NameSearchPage> {
                       prefixIcon: Icon(Icons.search),
                       filled: true,
                       fillColor: Colors.grey[900],
-                      border: InputBorder.none,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
+                    onChanged:
+                        _onSearchChanged, // ✅ Call this method when text changes
                   ),
                 ),
                 IconButton(
@@ -322,12 +365,8 @@ class _NameSearchPageState extends State<NameSearchPage> {
           ),
           Expanded(
             child: ListView.builder(
-              controller: _scrollController,
-              itemCount: filteredContractors.length + (_isLoading ? 1 : 0),
+              itemCount: filteredContractors.length,
               itemBuilder: (context, index) {
-                if (index == filteredContractors.length) {
-                  return Center(child: CircularProgressIndicator());
-                }
                 final contractor = filteredContractors[index];
                 return ContractorCard(
                   name: contractor['name'],
@@ -414,12 +453,6 @@ class ContractorCard extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-            Container(
-              decoration:
-                  BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-              padding: EdgeInsets.all(8),
-              child: Icon(Icons.arrow_forward, color: Colors.orange, size: 24),
             ),
           ],
         ),

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// 🔹 Fetch Ongoing Projects (Sorted by CreatedAt)
+/// 🔹 Fetch Ongoing Projects (Latest 3)
 Future<List<Map<String, dynamic>>> fetchOngoingProjects({
   required String currentUserId,
   required bool isHomeowner,
@@ -11,33 +11,38 @@ Future<List<Map<String, dynamic>>> fetchOngoingProjects({
 
   try {
     String userField = isHomeowner ? "homeownerId" : "contractorId";
+    String otherUserField =
+        isHomeowner ? "contractorId" : "homeownerId"; // Get the other user's ID
 
     print("🔍 Searching projects where $userField == $currentUserId");
 
-    // 1️⃣ Query projects where user is homeowner/contractor, sorted by `createdAt`
+    // 1️⃣ Query latest projects where user is homeowner/contractor, sorted by `createdAt`
     QuerySnapshot projectSnapshot = await _firestore
         .collection("projects")
         .where(userField, isEqualTo: currentUserId)
-        .orderBy("createdAt", descending: true) // Sort by latest
-        .limit(limit) // Fetch only the latest 3 projects
+        .orderBy("createdAt", descending: true) // Ensure createdAt is indexed!
+        .limit(limit) // Only latest 3 projects
         .get();
 
     print("📂 Found ${projectSnapshot.docs.length} matching projects");
 
     if (projectSnapshot.docs.isEmpty) return []; // No projects found
 
-    // 2️⃣ Store project IDs
-    List<String> projectIds =
-        projectSnapshot.docs.map((doc) => doc.id).toList();
-    print("📝 Stored Project IDs: $projectIds");
-
-    // 3️⃣ Fetch project details from "data" subcollection
+    // 2️⃣ Fetch project details from "data" subcollection & Other User Name
     List<Future<Map<String, dynamic>?>> projectDetailsFutures =
-        projectIds.map((projectId) {
-      return _fetchProjectDetails(_firestore, projectId);
+        projectSnapshot.docs.map((doc) {
+      Map<String, dynamic> projectData = doc.data() as Map<String, dynamic>;
+      String otherUserId = projectData[otherUserField] ?? "";
+
+      return _fetchProjectDetails(
+        _firestore,
+        doc.id,
+        projectData["createdAt"] ?? Timestamp.now(), // Pass parent createdAt
+        otherUserId, // Pass other user's ID
+      );
     }).toList();
 
-    // 4️⃣ Wait for all data fetches to complete
+    // 3️⃣ Wait for all data fetches to complete
     List<Map<String, dynamic>?> results =
         await Future.wait(projectDetailsFutures);
     projects =
@@ -52,37 +57,70 @@ Future<List<Map<String, dynamic>>> fetchOngoingProjects({
   }
 }
 
-/// 🔹 Fetch Project Details from "data" subcollection
-Future<Map<String, dynamic>?> _fetchProjectDetails(
-    FirebaseFirestore firestore, String projectId) async {
+/// 🔹 Fetch Project Details from "data" subcollection (Only "details" doc) + Fetch Other User's Name
+Future<Map<String, dynamic>?> _fetchProjectDetails(FirebaseFirestore firestore,
+    String projectId, Timestamp parentCreatedAt, String otherUserId) async {
   try {
-    print("🔍 Fetching details for project: $projectId");
+    print("🔍 Fetching 'details' document for project: $projectId");
 
-    QuerySnapshot dataSnapshot = await firestore
+    // ✅ Fetch the specific "details" document
+    DocumentSnapshot detailsDoc = await firestore
         .collection("projects")
         .doc(projectId)
         .collection("data")
-        .orderBy("createdAt", descending: true)
-        .limit(1)
+        .doc("details")
         .get();
 
-    if (dataSnapshot.docs.isEmpty) {
-      print("❌ No 'data' found for project: $projectId");
+    if (!detailsDoc.exists) {
+      print("❌ No 'details' document found for project: $projectId");
       return null;
     }
 
-    var detailsDoc = dataSnapshot.docs.first;
+    Map<String, dynamic> detailsData =
+        detailsDoc.data() as Map<String, dynamic>;
 
-    print("✅ Found details for project: $projectId");
+    print("✅ Found 'name': ${detailsData["name"]} for project: $projectId");
+
+    // ✅ Fetch the other user's name
+    String otherUserName = await _fetchUserName(firestore, otherUserId);
 
     return {
-      "name": detailsDoc["name"] ?? "Unnamed Project",
-      "createdAt": detailsDoc["createdAt"] ?? Timestamp.now(),
-      "status": detailsDoc["status"] ?? "Unknown",
+      "projectId": projectId,
+      "name": detailsData["name"] ?? "Unnamed Project",
+      "createdAt": parentCreatedAt, // ✅ Use parent document's createdAt
+      "status": detailsData["status"] ?? "Unknown",
+      "otherUserName": otherUserName, // ✅ Include the other user's name
     };
   } catch (e) {
-    print("⚠ Error fetching project details for $projectId: $e");
+    print("⚠ Error fetching 'details' document for $projectId: $e");
     return null;
+  }
+}
+
+/// 🔹 Fetch Other User's Name from Users Collection
+Future<String> _fetchUserName(
+    FirebaseFirestore firestore, String userId) async {
+  try {
+    if (userId.isEmpty) {
+      print("⚠ No other user ID provided");
+      return "Unknown User";
+    }
+
+    print("🔍 Fetching user name for userId: $userId");
+
+    DocumentSnapshot userDoc =
+        await firestore.collection("users").doc(userId).get();
+
+    if (!userDoc.exists) {
+      print("❌ No user found with ID: $userId");
+      return "Unknown User";
+    }
+
+    Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+    return userData["name"] ?? "Unnamed User";
+  } catch (e) {
+    print("⚠ Error fetching user name for ID: $userId - $e");
+    return "Unknown User";
   }
 }
 

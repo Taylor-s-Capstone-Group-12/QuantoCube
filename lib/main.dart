@@ -50,6 +50,11 @@ class MyApp extends StatelessWidget {
       theme: ProjectTheme.theme,
       home: const SplashScreen(),
       //home: ContractorHomePage(userName:'testuser'),
+      // home: ServiceRequestPage(
+      //   userID: '00',
+      //   contractorID: '01',
+      // ),
+      home: const SplashScreen(),
       navigatorObservers: [
         KeyboardDismissNavigatorObserver(),
       ],

@@ -5,6 +5,7 @@ import 'package:quantocube/components/components.dart';
 import 'package:quantocube/page/messaging/main/message_appbar.dart';
 import 'package:quantocube/page/messaging/main/message_list.dart';
 import 'package:quantocube/tests/sample_classes.dart';
+import 'package:quantocube/tests/test_func.dart';
 import 'package:quantocube/theme.dart';
 import 'package:quantocube/utils/utils.dart';
 
@@ -27,29 +28,36 @@ class MessagePage extends StatefulWidget {
 
 class _MessagePageState extends State<MessagePage> {
   List<Map<String, dynamic>> ChatData = [];
+  final FocusNode focusNode = FocusNode();
 
   late String userId;
   late bool isHomeowner;
-  late String otherUserName;
+  String otherUserName = 'Loading...';
 
   late TextEditingController _controller;
+  late ScrollController _scrollController;
 
-  void getRecepient() async {
-    otherUserName = "Error";
-    otherUserName = getOtherUserName(isHomeowner, widget.projectId) as String;
+  Future<void> getRecepient() async {
+    otherUserName = (await getOtherUserName(isHomeowner, widget.projectId))!;
+    setState(() {}); // Update UI after fetching data
   }
 
-  void initUser() async {
+  Future<void> initUser() async {
     userId = FirebaseAuth.instance.currentUser!.uid;
-    isHomeowner = await getUserType(FirebaseAuth.instance.currentUser!.uid);
+    isHomeowner = await getUserType(userId);
+
+    await getRecepient(); // Wait for the recipient to load
+    await loadMessages(); // Wait for messages to load
+
+    setState(() {}); // Refresh UI
   }
 
   @override
   void initState() {
     initUser();
-    getRecepient();
-    super.initState();
     _controller = TextEditingController();
+    _scrollController = ScrollController();
+    super.initState();
   }
 
   @override
@@ -58,49 +66,176 @@ class _MessagePageState extends State<MessagePage> {
     super.dispose();
   }
 
+  Future<void> loadMessages() async {
+    try {
+      QuerySnapshot chatSnapshot = await FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.projectId)
+          .collection('chat')
+          .orderBy('time', descending: false) // Sorting by time field
+          .get();
+
+      List<QueryDocumentSnapshot> chatDocs = chatSnapshot.docs;
+
+      ChatData.clear();
+
+      for (var chatDoc in chatDocs) {
+        print('chatdoc: ${chatDoc.data()}');
+
+        var data = chatDoc.data() as Map<String, dynamic>;
+
+        print('time data type: ${data['time'].runtimeType}');
+
+        // Convert Firestore Timestamp to DateTime, fallback to DateTime.now() if null
+        final DateTime time =
+            (data['time'] as Timestamp?)?.toDate() ?? DateTime.now();
+
+        // Clone the map and add 'isPending'
+        Map<String, dynamic> localData = {
+          ...data, // Spread operator to copy existing key-value pairs
+          'time': time, // Ensure time is converted
+          'isPending': false, // Add your custom field
+        };
+
+        ChatData.add(localData);
+      }
+
+      // Sort messages safely
+      //ChatData.sort((a, b) => a['time'].compareTo(b['time']));
+
+      setState(() {}); // Update UI
+    } catch (e) {
+      kPrint("Error loading messages: $e");
+    }
+  }
+
+  void sendMessage(String message) {
+    try {
+      DateTime localTime = DateTime.now(); // Local timestamp
+
+      setState(() {
+        ChatData.add({
+          'sender': userId,
+          'type': 'message',
+          'message': message,
+          'time': localTime, // Local timestamp to display immediately
+          'isPending': true, // Mark as pending to visually indicate it's unsent
+        });
+      });
+
+      // Scroll to the bottom after adding the message
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+
+      // Send to Firestore with server timestamp
+      _firestore
+          .collection('projects')
+          .doc(widget.projectId)
+          .collection('chat')
+          .add({
+        'sender': userId,
+        'type': 'message',
+        'message': message,
+        'time': FieldValue.serverTimestamp(), // Will be set later by Firestore
+      }).then((docRef) {
+        // Once Firestore assigns a timestamp, update our local message
+        docRef.get().then((docSnapshot) {
+          if (docSnapshot.exists) {
+            Map<String, dynamic> newData =
+                docSnapshot.data() as Map<String, dynamic>;
+            if (newData['time'] is Timestamp) {
+              DateTime serverTime = (newData['time'] as Timestamp).toDate();
+
+              setState(() {
+                // Replace the pending message with the Firestore-stored message
+                int index = ChatData.indexWhere((msg) =>
+                    msg['message'] == message && msg['isPending'] == true);
+                if (index != -1) {
+                  ChatData[index] = {
+                    ...ChatData[index],
+                    'time': serverTime,
+                    'isPending': false, // No longer pending
+                  };
+                }
+              });
+            }
+          }
+        });
+      });
+
+      // Clear the input field
+      _controller.clear();
+    } catch (e) {
+      kPrint("Error sending message: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: MessageAppBar(
-        recepientName: otherUserName,
+        recepientName: (otherUserName == null) ? "Loading..." : otherUserName,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: MessageList(
-              chatList: sampleChatData,
+      body: otherUserName == null
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Expanded(
+                  child: MessageList(
+                    userId: userId,
+                    chatList: ChatData,
+                    controller: _scrollController,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    focusNode.unfocus();
+                  },
+                  child: MessageInput(
+                      controller: _controller,
+                      focusNode: focusNode,
+                      onTap: (String message) {
+                        kPrint('Test: Sending $message');
+                        sendMessage(message);
+                      }),
+                ),
+              ],
             ),
-          ),
-          MessageInput(
-            controller: _controller,
-          ),
-        ],
-      ),
     );
   }
 }
 
 class MessageInput extends StatefulWidget {
-  const MessageInput({super.key, required this.controller});
+  const MessageInput(
+      {super.key,
+      required this.controller,
+      required this.onTap,
+      required this.focusNode});
 
   final TextEditingController controller;
+  final void Function(String) onTap;
+  final FocusNode focusNode;
 
   @override
   State<MessageInput> createState() => _MessageInputState();
 }
 
 class _MessageInputState extends State<MessageInput> {
-  final FocusNode _focusNode = FocusNode();
-
   @override
   Widget build(BuildContext context) {
     return Container(
       constraints: BoxConstraints(
-        minHeight: _focusNode.hasFocus ? 70 : 80,
+        minHeight: widget.focusNode.hasFocus ? 70 : 80,
         minWidth: MediaQuery.of(context).size.width,
       ),
       color: Theme.of(context).colorScheme.secondary,
-      padding: EdgeInsets.only(top: 10, bottom: _focusNode.hasFocus ? 10 : 30),
+      padding:
+          EdgeInsets.only(top: 10, bottom: widget.focusNode.hasFocus ? 10 : 30),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -109,8 +244,7 @@ class _MessageInputState extends State<MessageInput> {
           SizedBox(
             width: 290,
             child: TextField(
-              onTapOutside: (event) => _focusNode.unfocus(),
-              focusNode: _focusNode,
+              focusNode: widget.focusNode,
               controller: widget.controller,
               minLines: 1,
               maxLines: null,
@@ -153,7 +287,12 @@ class _MessageInputState extends State<MessageInput> {
               clipBehavior: Clip.hardEdge,
               child: InkWell(
                 borderRadius: BorderRadius.circular(50),
-                onTap: () {},
+                onTap: () {
+                  if (widget.controller.text.isNotEmpty) {
+                    widget.onTap(widget.controller.text);
+                    widget.controller.clear();
+                  }
+                },
                 child: const Icon(
                   Icons.send,
                   color: Colors.white,

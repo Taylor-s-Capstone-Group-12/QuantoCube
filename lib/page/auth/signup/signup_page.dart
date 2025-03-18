@@ -85,13 +85,7 @@ class _SignUpContentState extends State<SignUpContent> {
   bool acceptTerms = false;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  Map<String, String> signUpData = {
-    'email': '',
-    'name': '',
-    'password': '',
-    'receiveNewsletters': 'true',
-    'isHomeowner': 'true',
-  };
+  Map<String, String> signUpData = {};
 
   @override
   void initState() {
@@ -99,6 +93,13 @@ class _SignUpContentState extends State<SignUpContent> {
     emailController.addListener(_onTextChanged);
     receiveNewsletters = true;
     super.initState();
+    signUpData = {
+      'email': '',
+      'name': '',
+      'password': '',
+      'receiveNewsletters': 'true',
+      'isHomeowner': widget.isHomeowner ? 'true' : 'false',
+    };
   }
 
   @override

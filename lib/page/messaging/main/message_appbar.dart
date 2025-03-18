@@ -45,7 +45,7 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
               imageUrl: '',
               radius: 25,
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

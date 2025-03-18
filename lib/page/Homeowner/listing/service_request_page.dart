@@ -67,7 +67,7 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
     _loadingOverlayKey.currentState?.show(); // Show loading overlay
 
     String projectId = Uuid().v4(); // Generate a unique ID
-    projectId = "AB-CD"; // Generate a unique ID
+    //projectId = "AB-CD"; // Generate a unique ID
 
     DocumentReference projectRef =
         _firestore.collection("projects").doc(projectId);
@@ -118,7 +118,7 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
         });
 
         print("✅ Project created successfully: $projectId");
-        _loadingOverlayKey.currentState?.hide();
+
         return projectId; // Return the new project ID
       } catch (e) {
         _loadingOverlayKey.currentState?.hide();
@@ -130,7 +130,22 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
   }
 
   void onContinue() async {
-    await createProjectDocument();
+    final String projectID = await createProjectDocument();
+    _loadingOverlayKey.currentState?.hide();
+    if (projectID.isEmpty) {
+      return;
+    } else {
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/message',
+          arguments: MessagePageArgs(
+            projectId: projectID,
+            isFirstTime: true,
+          ),
+        );
+      }
+    }
     //TODO: Implement sending service request to firebase firestore
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantocube/page/homeowner/find_pros.dart';
+import 'package:quantocube/tests/test_func.dart';
 import 'package:quantocube/utils/project_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -39,7 +40,7 @@ class HomeownerHomePage extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
+      bottomNavigationBar: _buildBottomNavBar(context),
     );
   }
 
@@ -155,7 +156,7 @@ class HomeownerHomePage extends StatelessWidget {
   /// 🔹 Builds the Ongoing Projects UI dynamically
   Widget _buildOngoingProjects(
       String currentUserId, bool isHomeowner, int fetchLimit) {
-    print(
+    kPrint(
         "Fetching ongoing projects for userId: $currentUserId, isHomeowner: $isHomeowner, limit: $fetchLimit");
 
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -165,15 +166,15 @@ class HomeownerHomePage extends StatelessWidget {
         limit: fetchLimit,
       ),
       builder: (context, snapshot) {
-        print("FutureBuilder state: ${snapshot.connectionState}");
+        kPrint("FutureBuilder state: ${snapshot.connectionState}");
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          print("Loading ongoing projects...");
+          kPrint("Loading ongoing projects...");
           return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          print("Error fetching projects: ${snapshot.error}");
+          kPrint("Error fetching projects: ${snapshot.error}");
           return const Text(
             "Error loading projects",
             style: TextStyle(color: Colors.red, fontSize: 16),
@@ -181,7 +182,7 @@ class HomeownerHomePage extends StatelessWidget {
         }
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          print("No ongoing projects found.");
+          kPrint("No ongoing projects found.");
           return const Text(
             "No ongoing projects",
             style: TextStyle(color: Colors.white, fontSize: 16),
@@ -189,7 +190,7 @@ class HomeownerHomePage extends StatelessWidget {
         }
 
         List<Map<String, dynamic>> projects = snapshot.data!;
-        print("Fetched ${projects.length} projects.");
+        kPrint("Fetched ${projects.length} projects.");
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,22 +198,24 @@ class HomeownerHomePage extends StatelessWidget {
             const Text(
               "Ongoing Projects",
               style: TextStyle(
-                  color: Color.fromARGB(255, 137, 76, 76),
+                  color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            ...projects.map((project) {
-              print("Rendering project: ${project["name"]}");
-              return _buildProjectCard(
-                context,
-                project["projectId"],
-                project["name"],
-                project["otherUserName"] ?? "empty",
-                project["status"],
-                project["createdAt"],
-              );
-            }),
+            ...projects.take(3).map(
+              (project) {
+                kPrint("Rendering project: ${project["name"]}");
+                return _buildProjectCard(
+                  context,
+                  project["projectId"],
+                  project["name"],
+                  project["otherUserName"] ?? "empty",
+                  project["status"],
+                  project["createdAt"],
+                );
+              },
+            ),
           ],
         );
       },
@@ -464,10 +467,28 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNavBar() {
+  void bottomNavigationRoute(int value, BuildContext context) {
+    switch (value) {
+      case 0:
+        Navigator.pushNamed(context, '/homeowner_homepage');
+        break;
+      case 1:
+        Navigator.pushNamed(context, '/messaging_list');
+        break;
+      case 2:
+        // TODO: Navigate to Shopping Bag Page
+        break;
+      case 3:
+        // TODO: Navigate to Profile Page
+        break;
+    }
+  }
+
+  Widget _buildBottomNavBar(BuildContext context) {
     return BottomNavigationBar(
+      onTap: (value) => bottomNavigationRoute(value, context),
       backgroundColor: Colors.black,
-      selectedItemColor: Colors.orange,
+      selectedItemColor: Theme.of(context).colorScheme.primary,
       unselectedItemColor: Colors.white,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),

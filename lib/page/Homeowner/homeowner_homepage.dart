@@ -116,19 +116,28 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
           },
         ),
         Expanded(
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: "Search",
-              hintStyle: TextStyle(color: Colors.grey[500]),
-              filled: true,
-              fillColor: Colors.grey[900],
-              prefixIcon: const Icon(Icons.search, color: Colors.white),
-              border: OutlineInputBorder(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(
+                  context, '/name_search'); // Open the search page
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.search, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Text(
+                    "Search",
+                    style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                  ),
+                ],
               ),
             ),
-            style: const TextStyle(color: Colors.white),
           ),
         ),
       ],

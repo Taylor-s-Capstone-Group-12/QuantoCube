@@ -6,6 +6,7 @@ import 'package:quantocube/page/homeowner/project_overview.dart';
 import 'package:quantocube/page/homeowner/listing/contractor_profile.dart';
 import 'package:quantocube/page/homeowner/listing/contractor_profile_page.dart';
 import 'package:quantocube/page/homeowner/listing/project_chat.dart';
+import 'package:quantocube/page/homeowner/name_search.dart';
 import 'package:quantocube/page/auth/auth_selection.dart';
 import 'package:quantocube/page/auth/login_page.dart';
 import 'package:quantocube/data/contractor/contractor_data.dart';
@@ -98,6 +99,8 @@ class RouteGenerator {
           );
         }
         return _errorRoute();
+      case '/name_search':
+          return CupertinoPageRoute(builder: (_) => NameSearchPage());
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();

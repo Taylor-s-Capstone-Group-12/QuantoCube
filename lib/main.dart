@@ -32,7 +32,7 @@ void main() async {
   );
 
   // Initialize Firebase App Check
-  // Disable App Check (For Development Only)
+  // Use debug mode to bypass Firebase App Check in development
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
   );

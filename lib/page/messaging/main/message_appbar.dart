@@ -5,10 +5,10 @@ import 'package:quantocube/components/components.dart';
 class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
   const MessageAppBar({
     super.key,
-    required this.contractor,
+    required this.recepientName,
   });
 
-  final Map<String, String> contractor;
+  final String recepientName;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +42,7 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             CircularProfilePicture(
-              imageUrl: contractor['profilePic'],
+              imageUrl: '',
               radius: 25,
             ),
             const SizedBox(width: 5),
@@ -50,19 +50,11 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  contractor['name'] ?? 'ERROR: Name not found',
+                  recepientName,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
-                  ),
-                ),
-                Text(
-                  contractor['status'] ?? 'Offline',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFFB8B8B8),
                   ),
                 ),
               ],

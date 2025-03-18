@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantocube/components/components.dart';
 import 'package:quantocube/page/homeowner/find_pros.dart';
 import 'package:quantocube/tests/test_func.dart';
 import 'package:quantocube/utils/project_service.dart';
@@ -344,8 +345,9 @@ class HomeownerHomePage extends StatelessWidget {
             onPressed: () {
               Navigator.pushNamed(
                 context,
-                '/project_chat',
-                arguments: projectId, // Pass the correct projectId
+                '/message',
+                arguments: MessagePageArgs(
+                    projectId: projectId), // Pass the correct projectId
               );
             },
           )

@@ -1,9 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:quantocube/components/components.dart';
 import 'package:quantocube/page/messaging/main/message_appbar.dart';
 import 'package:quantocube/page/messaging/main/message_list.dart';
 import 'package:quantocube/tests/sample_classes.dart';
 import 'package:quantocube/theme.dart';
+import 'package:quantocube/utils/get_user_type.dart';
+
+final FirebaseFirestore _firestore =
+    FirebaseFirestore.instance; // Initialize Firestore
 
 class MessagePage extends StatefulWidget {
   const MessagePage({
@@ -19,20 +25,63 @@ class MessagePage extends StatefulWidget {
   State<MessagePage> createState() => _MessagePageState();
 }
 
+Future<String?> getOtherUserName(bool isHomeowner, String projectId) async {
+  try {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Get project document
+    DocumentSnapshot projectDoc =
+        await firestore.collection('projects').doc(projectId).get();
+
+    if (!projectDoc.exists)
+      return null; // If project doesn't exist, return null
+
+    // Get the corresponding user ID (homeowner or contractor)
+    String userId = isHomeowner
+        ? projectDoc['contractorId'] as String? ?? ''
+        : projectDoc['homeownerId'] as String? ?? '';
+
+    if (userId.isEmpty) return null; // Return null if no user ID found
+
+    // Get user document by retrieved userId
+    DocumentSnapshot userDoc =
+        await firestore.collection('users').doc(userId).get();
+
+    if (!userDoc.exists) return null;
+
+    return userDoc['name'] as String? ??
+        'Unknown'; // Return the name or 'Unknown'
+  } catch (e) {
+    print("Error fetching other user name: $e");
+    return null; // Return null in case of error
+  }
+}
+
 class _MessagePageState extends State<MessagePage> {
-  Map<String, String> contractor = {
-    'name': '',
-    'profilePic': '',
-    'status': '',
-  };
+  List<Map<String, dynamic>> ChatData = [];
+
+  late String userId;
+  late bool isHomeowner;
+  late String otherUserName;
 
   late TextEditingController _controller;
 
+  void getRecepient() async {
+    otherUserName = "Error";
+    otherUserName = getOtherUserName(isHomeowner, widget.projectId) as String;
+  }
+
+  void initUser() async {
+    userId = FirebaseAuth.instance.currentUser!.uid;
+    isHomeowner = await getUserType(FirebaseAuth.instance.currentUser!.uid);
+  }
+
   @override
   void initState() {
+    initUser();
+    getRecepient();
     super.initState();
     _controller = TextEditingController();
-    getContractor();
   }
 
   @override
@@ -41,24 +90,14 @@ class _MessagePageState extends State<MessagePage> {
     super.dispose();
   }
 
-  void getContractor() {
-    //TODO: Implement getting contractor from firebase firestore
-
-    // temp data
-    contractor = {
-      'name': 'John Doe',
-      'status': 'Online',
-      'profilePic':
-          'https://img.freepik.com/free-photo/building-sector-industrial-workers-concept-confident-young-asian-engineer-construction-manager-reflective-clothes-helmet-cross-arms-smiling-sassy-ensuring-quality-white-wall_1258-17542.jpg',
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: MessageAppBar(contractor: contractor),
+      appBar: MessageAppBar(
+        recepientName: otherUserName,
+      ),
       body: Column(
         children: [
           Expanded(

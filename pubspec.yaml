@@ -56,6 +56,7 @@ dependencies:
   signature: ^6.0.0
   app_bar_with_search_switch: ^1.8.6
   intl: ^0.20.2
+  flutter_keyboard_visibility: ^6.0.0
   
 
 dev_dependencies:

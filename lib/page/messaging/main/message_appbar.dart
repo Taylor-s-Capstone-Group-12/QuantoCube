@@ -15,6 +15,7 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return AppBar(
+      scrolledUnderElevation: 0.0,
       leading: Padding(
         padding: const EdgeInsets.only(left: 15.0, bottom: 10),
         child: IconButton(

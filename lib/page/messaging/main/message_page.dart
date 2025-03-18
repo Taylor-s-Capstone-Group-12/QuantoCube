@@ -47,7 +47,11 @@ class _MessagePageState extends State<MessagePage> {
     isHomeowner = await getUserType(userId);
 
     await getRecepient(); // Wait for the recipient to load
-    await loadMessages(); // Wait for messages to load
+    await loadMessages().then((_) {
+      Future.delayed(Duration(milliseconds: 300), () {
+        _scrollToBottom();
+      });
+    }); // Wait for messages to load
 
     setState(() {}); // Refresh UI
   }
@@ -57,12 +61,21 @@ class _MessagePageState extends State<MessagePage> {
     initUser();
     _controller = TextEditingController();
     _scrollController = ScrollController();
+    focusNode.addListener(() {
+      if (focusNode.hasFocus) {
+        Future.delayed(const Duration(milliseconds: 800), () {
+          _scrollToBottom();
+        });
+      }
+    });
     super.initState();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _scrollController.dispose();
+    focusNode.dispose();
     super.dispose();
   }
 
@@ -109,6 +122,16 @@ class _MessagePageState extends State<MessagePage> {
     }
   }
 
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   void sendMessage(String message) {
     try {
       DateTime localTime = DateTime.now(); // Local timestamp
@@ -125,11 +148,7 @@ class _MessagePageState extends State<MessagePage> {
 
       // Scroll to the bottom after adding the message
       Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        _scrollToBottom();
       });
 
       // Send to Firestore with server timestamp
@@ -178,34 +197,62 @@ class _MessagePageState extends State<MessagePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: MessageAppBar(
-        recepientName: (otherUserName == null) ? "Loading..." : otherUserName,
-      ),
-      body: otherUserName == null
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: MessageList(
+      appBar: MessageAppBar(recepientName: otherUserName),
+      body: Column(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => focusNode.unfocus(),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('projects')
+                    .doc(widget.projectId)
+                    .collection('chat')
+                    .orderBy('time', descending: false)
+                    .snapshots(), // 🔥 Real-time updates
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text("No messages yet."));
+                  }
+
+                  List<Map<String, dynamic>> chatList =
+                      snapshot.data!.docs.map((doc) {
+                    var data = doc.data() as Map<String, dynamic>;
+
+                    return {
+                      ...data,
+                      'time': (data['time'] as Timestamp?)?.toDate() ??
+                          DateTime.now(),
+                    };
+                  }).toList();
+
+                  // Scroll to bottom when messages update
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _scrollToBottom();
+                  });
+
+                  return MessageList(
                     userId: userId,
-                    chatList: ChatData,
+                    chatList: chatList,
                     controller: _scrollController,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    focusNode.unfocus();
-                  },
-                  child: MessageInput(
-                      controller: _controller,
-                      focusNode: focusNode,
-                      onTap: (String message) {
-                        kPrint('Test: Sending $message');
-                        sendMessage(message);
-                      }),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
+          ),
+          MessageInput(
+            controller: _controller,
+            focusNode: focusNode,
+            onTap: (String message) {
+              sendMessage(message);
+            },
+          ),
+        ],
+      ),
     );
   }
 }

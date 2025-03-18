@@ -120,7 +120,7 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
   void sendOtp() async {
     if (phoneValidator(phoneController.text)) {
       // Refresh Firebase App Check token before sending OTP
-      await FirebaseAppCheck.instance.getToken(true);
+      //await FirebaseAppCheck.instance.getToken(true);
 
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneController.text,

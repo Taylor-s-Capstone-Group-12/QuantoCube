@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class MessageList extends StatelessWidget {
   const MessageList({
@@ -17,27 +18,77 @@ class MessageList extends StatelessWidget {
       width: MediaQuery.of(context).size.width,
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: ListView.builder(
-          itemCount: chatList.length,
-          itemBuilder: (context, index) {
-            switch (chatList[index]['type']) {
-              case 'message':
-                return MessageBubble(
-                  message: chatList[index]['message'] ?? 'ERROR',
-                  isSender: bool.parse(chatList[index]['isSender'] ?? 'true'),
-                  date: chatList[index]['date'],
-                );
-              case 'attachment':
-                return AttachmentBubble(
-                  message: chatList[index]['message'] ?? 'ERROR',
-                  isSender: bool.parse(chatList[index]['isSender'] ?? 'true'),
-                  onTap: chatList[index]['onTap'] as VoidCallback,
-                  date: chatList[index]['date'],
-                );
-              default:
-                return const SizedBox();
-            }
-          }),
+        itemCount: chatList.length + (isFirstTime == true ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (isFirstTime == true && index == 0) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  "⚠ Be cautious of phishing and scams.",
+                  style:
+                      TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          // Adjust index if first-time warning is shown
+          final adjustedIndex = isFirstTime == true ? index - 1 : index;
+          final message = chatList[adjustedIndex];
+
+          DateTime messageDate = message['date'];
+          String formattedDate = DateFormat('MMMM d, yyyy').format(messageDate);
+
+          bool showDateHeader = adjustedIndex == 0 ||
+              DateFormat('yyyy-MM-dd')
+                      .format(chatList[adjustedIndex - 1]['date']) !=
+                  DateFormat('yyyy-MM-dd').format(messageDate);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (showDateHeader)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Center(
+                    child: Text(
+                      formattedDate.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF8F9193),
+                      ),
+                    ),
+                  ),
+                ),
+              _buildMessageItem(message),
+            ],
+          );
+        },
+      ),
     );
+  }
+
+  Widget _buildMessageItem(Map<String, dynamic> message) {
+    switch (message['type']) {
+      case 'message':
+        return MessageBubble(
+          message: message['message'] ?? 'ERROR',
+          isSender: bool.parse(message['isSender'] ?? 'true'),
+          date: message['date'],
+        );
+      case 'attachment':
+        return AttachmentBubble(
+          message: message['message'] ?? 'ERROR',
+          isSender: bool.parse(message['isSender'] ?? 'true'),
+          onTap: message['onTap'] as VoidCallback,
+          date: message['date'],
+        );
+      default:
+        return const SizedBox();
+    }
   }
 }
 
@@ -55,31 +106,45 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
-      child: Row(
-        mainAxisAlignment:
-            isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          Container(
+    return Column(
+      crossAxisAlignment:
+          isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.7,
+              maxWidth: MediaQuery.of(context).size.width * 0.6,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             decoration: BoxDecoration(
               color: isSender
                   ? Theme.of(context).colorScheme.primary
                   : const Color(0xFF2C2C2C),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                )),
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+              ),
+            ),
           ),
-          DateDivider(date: _formatChatTime(date)),
-        ],
-      ),
+        ),
+        const SizedBox(height: 3),
+        Padding(
+          padding: EdgeInsets.only(
+              left: isSender ? 0 : 10, right: isSender ? 10 : 0),
+          child: Text(
+            _formatChatTime(date),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[500],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -112,42 +177,61 @@ class AttachmentBubble extends StatelessWidget {
     required this.isSender,
     required this.onTap,
     required this.date,
+    this.attachmentType = 'Service Request',
   });
 
   final String message;
+  final String attachmentType;
   final bool isSender;
   final VoidCallback onTap;
   final DateTime date;
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
-      child: Row(
-        children: [
-          Container(
+    return Column(
+      crossAxisAlignment:
+          isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.7,
+              maxWidth: MediaQuery.of(context).size.width * 0.6,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             decoration: BoxDecoration(
               color: isSender
                   ? Theme.of(context).colorScheme.primary
                   : const Color(0xFF2C2C2C),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     GestureDetector(
                       onTap: onTap,
-                      child: const CircleAvatar(
-                        radius: 15,
-                        child: Icon(
+                      child: CircleAvatar(
+                        radius: 17,
+                        backgroundColor: isSender
+                            ? const Color(0xFF1B1B1B)
+                            : const Color(0xFF2C2C2C),
+                        child: const Icon(
                           Icons.description_outlined,
                           color: Colors.white,
-                          size: 24,
+                          size: 20,
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        attachmentType,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -163,42 +247,24 @@ class AttachmentBubble extends StatelessWidget {
               ],
             ),
           ),
-          DateDivider(date: _formatChatTime(date)),
-        ],
-      ),
+        ),
+        const SizedBox(height: 3),
+        Padding(
+          padding: EdgeInsets.only(
+              left: isSender ? 0 : 10, right: isSender ? 10 : 0),
+          child: Text(
+            _formatChatTime(date),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[500],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
 String _formatChatTime(DateTime messageTime) {
-  Duration difference = DateTime.now().difference(messageTime);
-
-  if (difference.inSeconds < 60) {
-    return "${difference.inSeconds} s"; // Seconds ago
-  } else if (difference.inMinutes < 60) {
-    return "${difference.inMinutes} mins"; // Minutes ago
-  } else if (difference.inHours < 24) {
-    return "${difference.inHours} hrs"; // Hours ago
-  } else {
-    return "${messageTime.day} ${_getMonthName(messageTime.month)}"; // "18 Mar"
-  }
-}
-
-String _getMonthName(int month) {
-  const months = [
-    '',
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec'
-  ];
-  return months[month];
+  return DateFormat('HH:mm').format(messageTime); // 24-hour format
 }

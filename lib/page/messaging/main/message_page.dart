@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quantocube/components/components.dart';
 import 'package:quantocube/page/messaging/main/message_appbar.dart';
 import 'package:quantocube/page/messaging/main/message_list.dart';
+import 'package:quantocube/tests/sample_classes.dart';
 import 'package:quantocube/theme.dart';
 
 class MessagePage extends StatefulWidget {
@@ -60,9 +61,9 @@ class _MessagePageState extends State<MessagePage> {
       appBar: MessageAppBar(contractor: contractor),
       body: Column(
         children: [
-          const Expanded(
+          Expanded(
             child: MessageList(
-              chatList: [],
+              chatList: sampleChatData,
             ),
           ),
           MessageInput(

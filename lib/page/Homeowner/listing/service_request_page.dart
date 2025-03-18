@@ -81,6 +81,11 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
           "createdAt": FieldValue.serverTimestamp(),
         });
 
+        await projectRef.collection("timeline").doc(Uuid().v4()).set({
+          "createdAt": FieldValue.serverTimestamp(),
+          "status": "serviceRequest",
+        });
+
         // Initialize "details" document
         await projectRef.collection("data").doc("details").set({
           "createdAt": FieldValue.serverTimestamp(),
@@ -93,7 +98,7 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
           "budgetMin": int.parse(serviceRequest['minBudget']!),
           "budgetMax": int.parse(serviceRequest['maxBudget']!),
           "comments": serviceRequest['additionalComment'],
-          "status": "service request",
+          "status": "serviceRequest",
         });
 
         // Initialize "pending quotation" document

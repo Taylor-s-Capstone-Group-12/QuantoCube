@@ -194,12 +194,24 @@ class HomeownerHomePage extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Ongoing Projects",
-              style: TextStyle(
-                  color: Color.fromARGB(255, 137, 76, 76),
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Ongoing Projects",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/project_overview');
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             ...projects.map((project) {
@@ -218,39 +230,6 @@ class HomeownerHomePage extends StatelessWidget {
       },
     );
   }
-
-  // /// 🔹 Builds a Single Project Card
-  // Widget _buildProjectCard(String projectName, String otherUserName,
-  //     String status, Timestamp createdAt) {
-  //   return Card(
-  //     color: Colors.grey[900],
-  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-  //     child: ListTile(
-  //       title: Text(
-  //         projectName,
-  //         style: const TextStyle(
-  //             color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-  //       ),
-  //       subtitle: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text(
-  //             "Partner: $otherUserName",
-  //             style: const TextStyle(color: Colors.white70, fontSize: 14),
-  //           ),
-  //           Text(
-  //             "Status: $status",
-  //             style: const TextStyle(color: Colors.white70, fontSize: 14),
-  //           ),
-  //           Text(
-  //             "Created: ${formatDate(createdAt)}",
-  //             style: const TextStyle(color: Colors.white70, fontSize: 14),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 
   String _formatStatus(String status) {
     // Handle empty status
@@ -350,6 +329,39 @@ class HomeownerHomePage extends StatelessWidget {
       ),
     );
   }
+
+// /// 🔹 Builds a Single Project Card
+  // Widget _buildProjectCard(String projectName, String otherUserName,
+  //     String status, Timestamp createdAt) {
+  //   return Card(
+  //     color: Colors.grey[900],
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  //     child: ListTile(
+  //       title: Text(
+  //         projectName,
+  //         style: const TextStyle(
+  //             color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+  //       ),
+  //       subtitle: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text(
+  //             "Partner: $otherUserName",
+  //             style: const TextStyle(color: Colors.white70, fontSize: 14),
+  //           ),
+  //           Text(
+  //             "Status: $status",
+  //             style: const TextStyle(color: Colors.white70, fontSize: 14),
+  //           ),
+  //           Text(
+  //             "Created: ${formatDate(createdAt)}",
+  //             style: const TextStyle(color: Colors.white70, fontSize: 14),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   // Widget _buildProjectCard(String status, IconData icon, Color color) {
   //   return Container(

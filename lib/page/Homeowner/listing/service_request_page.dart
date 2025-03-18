@@ -176,7 +176,7 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
           child: Stack(children: [
             Container(
               height: 70,
-              width: double.infinity,
+              width: MediaQuery.of(context).size.width,
               color: Colors.grey[900],
             ),
             LargeOrangeButton.onlyText(
@@ -290,7 +290,7 @@ class _ServiceRequestBodyState extends State<ServiceRequestBody> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
+      width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(40),
@@ -430,35 +430,39 @@ class ServiceSelectionMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownMenu<String>(
-      width: double.infinity,
-      hintText: 'Select Service',
-      inputDecorationTheme: ProjectTheme.inputDecorationTheme(context),
-      onSelected: (value) {
-        onSelected(value ?? '');
-      },
-      dropdownMenuEntries: [
-        for (var service in serviceSelections)
-          DropdownMenuEntry<String>(
-            value: service,
-            label: service,
-          ),
-      ],
-      textStyle: const TextStyle(
-        color: Colors.white,
-        fontSize: 15,
-      ),
-      menuStyle: MenuStyle(
-        maximumSize: WidgetStateProperty.all(Size.fromWidth(350)),
-        backgroundColor:
-            WidgetStateProperty.all(Colors.grey[900]), // Dark background
-        elevation: WidgetStateProperty.all(8), // Shadow effect
-        shape: WidgetStateProperty.all(
-          const RoundedRectangleBorder(
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.9, // 90% of screen width
+      child: DropdownMenu<String>(
+        hintText: 'Select Service',
+        inputDecorationTheme: ProjectTheme.inputDecorationTheme(context),
+        onSelected: (value) {
+          onSelected(value ?? '');
+        },
+        dropdownMenuEntries: [
+          for (var service in serviceSelections)
+            DropdownMenuEntry<String>(
+              value: service,
+              label: service,
+            ),
+        ],
+        textStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+        ),
+        menuStyle: MenuStyle(
+          maximumSize: WidgetStateProperty.all(
+              const Size(1000, double.infinity)), // Fixed max width
+          backgroundColor:
+              WidgetStateProperty.all(Colors.grey[900]), // Dark background
+          elevation: WidgetStateProperty.all(8), // Shadow effect
+          shape: WidgetStateProperty.all(
+            const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(20),
-            bottomRight: Radius.circular(20),
-          )),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -11,7 +11,7 @@ import 'package:quantocube/data/contractor/contractor_data.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
 import 'package:quantocube/page/homeowner/listing/service_request_page.dart';
 import 'package:quantocube/page/messaging/chat_list_page.dart';
-import 'package:quantocube/page/messaging/message_page.dart';
+import 'package:quantocube/page/messaging/main/message_page.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:quantocube/page/search/geo_search.dart';
 import 'package:quantocube/route/error_page.dart';

@@ -80,3 +80,7 @@ List<ChatPreview> sampleChatPreviews = [
     isOnline: false,
   ),
 ];
+
+List<Map<String, dynamic>> dummyMessages =  [
+
+];

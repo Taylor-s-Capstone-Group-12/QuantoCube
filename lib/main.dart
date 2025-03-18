@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:quantocube/page/messaging/main/message_page.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
@@ -48,9 +49,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ProjectTheme.theme,
-      // home: ServiceRequestPage(
-      //   userID: '00',
-      //   contractorID: '01',
+      // home: MessagePage(
+      //   projectId: '123',
+      //   isFirstTime: true,
       // ),
       home: const SplashScreen(),
       navigatorObservers: [

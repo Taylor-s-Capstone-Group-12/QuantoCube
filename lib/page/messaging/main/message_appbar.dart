@@ -57,12 +57,12 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
                     color: Colors.white,
                   ),
                 ),
-                const Text(
-                  'Online',
-                  style: TextStyle(
+                Text(
+                  contractor['status'] ?? 'Offline',
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Colors.white,
+                    color: Color(0xFFB8B8B8),
                   ),
                 ),
               ],

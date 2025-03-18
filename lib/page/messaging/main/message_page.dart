@@ -6,7 +6,7 @@ import 'package:quantocube/page/messaging/main/message_appbar.dart';
 import 'package:quantocube/page/messaging/main/message_list.dart';
 import 'package:quantocube/tests/sample_classes.dart';
 import 'package:quantocube/theme.dart';
-import 'package:quantocube/utils/get_user_type.dart';
+import 'package:quantocube/utils/utils.dart';
 
 final FirebaseFirestore _firestore =
     FirebaseFirestore.instance; // Initialize Firestore
@@ -23,38 +23,6 @@ class MessagePage extends StatefulWidget {
 
   @override
   State<MessagePage> createState() => _MessagePageState();
-}
-
-Future<String?> getOtherUserName(bool isHomeowner, String projectId) async {
-  try {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    // Get project document
-    DocumentSnapshot projectDoc =
-        await firestore.collection('projects').doc(projectId).get();
-
-    if (!projectDoc.exists)
-      return null; // If project doesn't exist, return null
-
-    // Get the corresponding user ID (homeowner or contractor)
-    String userId = isHomeowner
-        ? projectDoc['contractorId'] as String? ?? ''
-        : projectDoc['homeownerId'] as String? ?? '';
-
-    if (userId.isEmpty) return null; // Return null if no user ID found
-
-    // Get user document by retrieved userId
-    DocumentSnapshot userDoc =
-        await firestore.collection('users').doc(userId).get();
-
-    if (!userDoc.exists) return null;
-
-    return userDoc['name'] as String? ??
-        'Unknown'; // Return the name or 'Unknown'
-  } catch (e) {
-    print("Error fetching other user name: $e");
-    return null; // Return null in case of error
-  }
 }
 
 class _MessagePageState extends State<MessagePage> {
@@ -92,8 +60,6 @@ class _MessagePageState extends State<MessagePage> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: MessageAppBar(
         recepientName: otherUserName,

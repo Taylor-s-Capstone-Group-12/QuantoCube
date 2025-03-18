@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:quantocube/components/components.dart';
+import 'package:quantocube/page/homeowner/listing/edit_service_request.dart';
+import 'package:quantocube/page/messaging/attachment/create_quotation.dart';
 import 'package:quantocube/page/messaging/main/message_appbar.dart';
 import 'package:quantocube/page/messaging/main/message_list.dart';
 import 'package:quantocube/tests/sample_classes.dart';
@@ -301,6 +303,8 @@ class _MessagePageState extends State<MessagePage> {
           MessageInput(
             controller: _controller,
             focusNode: focusNode,
+            projectId: widget.projectId,
+            isHomeowner: isHomeowner,
             onTap: (String message) {
               sendMessage(message);
             },
@@ -316,19 +320,30 @@ class MessageInput extends StatefulWidget {
       {super.key,
       required this.controller,
       required this.onTap,
-      required this.focusNode});
+      required this.focusNode,
+      required this.projectId,
+      required this.isHomeowner});
 
   final TextEditingController controller;
   final void Function(String) onTap;
   final FocusNode focusNode;
+  final String projectId;
+  final bool isHomeowner;
 
   @override
   State<MessageInput> createState() => _MessageInputState();
 }
 
 class _MessageInputState extends State<MessageInput> {
+  bool openWindow = false;
+
   @override
   Widget build(BuildContext context) {
+    Color original = Theme.of(context).colorScheme.secondary;
+    HSLColor hsl = HSLColor.fromColor(original);
+    Color darkerColor =
+        hsl.withLightness((hsl.lightness - 0.2).clamp(0.0, 1.0)).toColor();
+
     return Container(
       constraints: BoxConstraints(
         minHeight: widget.focusNode.hasFocus ? 70 : 80,
@@ -337,73 +352,165 @@ class _MessageInputState extends State<MessageInput> {
       color: Theme.of(context).colorScheme.secondary,
       padding:
           EdgeInsets.only(top: 10, bottom: widget.focusNode.hasFocus ? 10 : 30),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
         children: [
-          SizedBox(
-            width: 290,
-            child: TextField(
-              focusNode: widget.focusNode,
-              controller: widget.controller,
-              minLines: 1,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              decoration: ProjectTheme.inputDecoration(context).copyWith(
-                hintText: 'Aa',
-                contentPadding: const EdgeInsets.only(left: 20),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-                fillColor: const Color(0xFF333233),
-                suffixIcon: IconButton(
-                  style: IconButton.styleFrom(
-                    overlayColor: Colors.white,
-                    //highlightColor: Colors.white,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 290,
+                child: TextField(
+                  focusNode: widget.focusNode,
+                  controller: widget.controller,
+                  minLines: 1,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  decoration: ProjectTheme.inputDecoration(context).copyWith(
+                    hintText: 'Aa',
+                    contentPadding: const EdgeInsets.only(left: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                    fillColor: const Color(0xFF333233),
+                    suffixIcon: IconButton(
+                      style: IconButton.styleFrom(
+                        overlayColor: Colors.white,
+                        //highlightColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          openWindow = !openWindow;
+                        });
+                      },
+                      icon: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.insert_emoticon_outlined,
-                    color: Colors.white,
+                ),
+              ),
+              const SizedBox(
+                width: 7,
+              ),
+              SizedBox(
+                height: 40,
+                width: 35,
+                child: Material(
+                  shape: const CircleBorder(),
+                  color: Theme.of(context).colorScheme.primary,
+                  clipBehavior: Clip.hardEdge,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(50),
+                    onTap: () {
+                      if (widget.controller.text.isNotEmpty) {
+                        widget.onTap(widget.controller.text);
+                        widget.controller.clear();
+                      }
+                    },
+                    child: const Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          ClipRect(
+            child: AnimatedContainer(
+              color: Theme.of(context).colorScheme.secondary,
+              duration: const Duration(milliseconds: 300),
+              height: openWindow ? 100 : 0, // Ensures smooth transition
+              child: SingleChildScrollView(
+                physics:
+                    const NeverScrollableScrollPhysics(), // Prevents unwanted scrolling
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 30.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      widget.isHomeowner
+                          ? _buildAttachmentButton(
+                              icon: Icons.file_copy,
+                              label: 'New Service Request',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        EditServiceRequestPage(
+                                      projectID: widget.projectId,
+                                    ),
+                                  ),
+                                );
+                                // Handle photo attachment
+                              },
+                            )
+                          : _buildAttachmentButton(
+                              icon: Icons.file_copy,
+                              label: 'New Quotation',
+                              onTap: () {
+                                // Handle photo attachment
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CreateQuotationPage(
+                                      projectId: widget.projectId,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(
-            width: 7,
-          ),
-          SizedBox(
-            height: 40,
-            width: 35,
-            child: Material(
-              shape: const CircleBorder(),
-              color: Theme.of(context).colorScheme.primary,
-              clipBehavior: Clip.hardEdge,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(50),
-                onTap: () {
-                  if (widget.controller.text.isNotEmpty) {
-                    widget.onTap(widget.controller.text);
-                    widget.controller.clear();
-                  }
-                },
-                child: const Icon(
-                  Icons.send,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
+          )
         ],
       ),
+    );
+  }
+
+  Widget _buildAttachmentButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      children: [
+        Material(
+          shape: const CircleBorder(),
+          color: Theme.of(context).colorScheme.primary,
+          clipBehavior: Clip.hardEdge,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(50),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white, fontSize: 12),
+        ),
+      ],
     );
   }
 }

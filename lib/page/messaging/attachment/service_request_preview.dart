@@ -126,9 +126,56 @@ class _ServiceRequestPreviewPageState extends State<ServiceRequestPreviewPage> {
     }
   }
 
-  void onDecline() {}
+  Future<void> addAnnoucement(String message) async {
+    _firestore
+        .collection('projects')
+        .doc(widget.projectId)
+        .collection('chat')
+        .add({
+      'sender': userId,
+      'message': message,
+      'time': FieldValue.serverTimestamp(),
+      'type': 'announcement',
+    });
+  }
 
-  void onAccept() {}
+  void onDecline() {
+    _firestore
+        .collection('projects')
+        .doc(widget.projectId)
+        .collection('data')
+        .doc('details')
+        .update({'serviceStatus': 'decline'}).then((_) async {
+      print('Service status updated successfully');
+
+      await addAnnoucement('Service request has been declined.');
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    }).catchError((error) {
+      print('Failed to update service status: $error');
+    });
+  }
+
+  void onAccept() {
+    _firestore
+        .collection('projects')
+        .doc(widget.projectId)
+        .collection('data')
+        .doc('details')
+        .update({'serviceStatus': 'accepted'}).then((_) async {
+      print('Service status updated successfully');
+
+      await addAnnoucement('Service request has been accepted.');
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    }).catchError((error) {
+      print('Failed to update service status: $error');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -314,7 +361,10 @@ class ServiceRequestBody extends StatelessWidget {
                   'MYR ${serviceRequest['budgetMin']} - MYR ${serviceRequest['budgetMax']}'),
           const Separator(),
           const TitleSection(title: 'Additional Comments'),
-          DisplayDetail(detail: serviceRequest['comments']!),
+          DisplayDetail(
+              detail: serviceRequest['comments']!.isEmpty
+                  ? '\n\n\n\n'
+                  : serviceRequest['comments']!),
         ],
       ),
     );

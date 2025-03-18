@@ -10,3 +10,23 @@ class ContractorPageArgs {
     required this.reviews,
   });
 }
+
+class RequestServiceArgs {
+  final String contractorId;
+  final String homeownerId;
+
+  RequestServiceArgs({
+    required this.contractorId,
+    required this.homeownerId,
+  });
+}
+
+class MessagePageArgs {
+  final String projectId;
+  final bool isFirstTime;
+
+  MessagePageArgs({
+    required this.projectId,
+    this.isFirstTime = false,
+  });
+}

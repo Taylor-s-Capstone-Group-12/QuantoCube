@@ -62,7 +62,7 @@ Future<Map<String, dynamic>?> _fetchProjectDetails(
         .collection("projects")
         .doc(projectId)
         .collection("data")
-        .orderBy("createdAt", descending: true)
+        .orderBy("createdAt", descending: false)
         .limit(1)
         .get();
 

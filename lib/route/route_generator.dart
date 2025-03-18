@@ -8,7 +8,9 @@ import 'package:quantocube/page/auth/auth_selection.dart';
 import 'package:quantocube/page/auth/login_page.dart';
 import 'package:quantocube/data/contractor/contractor_data.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
+import 'package:quantocube/page/homeowner/listing/service_request_page.dart';
 import 'package:quantocube/page/messaging/chat_list_page.dart';
+import 'package:quantocube/page/messaging/message_page.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
 import 'package:quantocube/page/search/geo_search.dart';
 import 'package:quantocube/route/error_page.dart';
@@ -63,8 +65,28 @@ class RouteGenerator {
           );
         }
         return _errorRoute();
-      case '/messaging':
+      case '/messaging_list':
         return CupertinoPageRoute(builder: (_) => const ChatListPage());
+      case '/message':
+        if (args is MessagePageArgs) {
+          return CupertinoPageRoute(
+            builder: (_) => MessagePage(
+              projectId: args.projectId,
+              isFirstTime: args.isFirstTime,
+            ),
+          );
+        }
+        return _errorRoute();
+      case '/request_service':
+        if (args is RequestServiceArgs) {
+          return CupertinoPageRoute(
+            builder: (_) => ServiceRequestPage(
+              contractorID: args.contractorId,
+              userID: args.homeownerId,
+            ),
+          );
+        }
+        return _errorRoute();
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();

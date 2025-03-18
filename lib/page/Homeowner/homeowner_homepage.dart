@@ -391,10 +391,7 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
         } else if (index == 1) {
           Navigator.pushNamed(context, '/messages');
         } else if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ProjectPage()),
-          );
+          Navigator.pushNamed(context, '/project_overview');
         } else if (index == 3) {
           Navigator.pushNamed(context, '/profile');
         }

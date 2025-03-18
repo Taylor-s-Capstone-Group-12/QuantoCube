@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:quantocube/components/components.dart';
 import 'package:quantocube/page/Homeowner/project_page.dart';
 import 'package:quantocube/page/homeowner/find_pros.dart';
+import 'package:quantocube/tests/test_func.dart';
 import 'package:quantocube/utils/project_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -156,7 +158,7 @@ class HomeownerHomePage extends StatelessWidget {
   /// 🔹 Builds the Ongoing Projects UI dynamically
   Widget _buildOngoingProjects(
       String currentUserId, bool isHomeowner, int fetchLimit) {
-    print(
+    kPrint(
         "Fetching ongoing projects for userId: $currentUserId, isHomeowner: $isHomeowner, limit: $fetchLimit");
 
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -166,15 +168,15 @@ class HomeownerHomePage extends StatelessWidget {
         limit: fetchLimit,
       ),
       builder: (context, snapshot) {
-        print("FutureBuilder state: ${snapshot.connectionState}");
+        kPrint("FutureBuilder state: ${snapshot.connectionState}");
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          print("Loading ongoing projects...");
+          kPrint("Loading ongoing projects...");
           return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          print("Error fetching projects: ${snapshot.error}");
+          kPrint("Error fetching projects: ${snapshot.error}");
           return const Text(
             "Error loading projects",
             style: TextStyle(color: Colors.red, fontSize: 16),
@@ -182,7 +184,7 @@ class HomeownerHomePage extends StatelessWidget {
         }
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          print("No ongoing projects found.");
+          kPrint("No ongoing projects found.");
           return const Text(
             "No ongoing projects",
             style: TextStyle(color: Colors.white, fontSize: 16),
@@ -190,7 +192,7 @@ class HomeownerHomePage extends StatelessWidget {
         }
 
         List<Map<String, dynamic>> projects = snapshot.data!;
-        print("Fetched ${projects.length} projects.");
+        kPrint("Fetched ${projects.length} projects.");
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,22 +200,24 @@ class HomeownerHomePage extends StatelessWidget {
             const Text(
               "Ongoing Projects",
               style: TextStyle(
-                  color: Color.fromARGB(255, 137, 76, 76),
+                  color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            ...projects.map((project) {
-              print("Rendering project: ${project["name"]}");
-              return _buildProjectCard(
-                context,
-                project["projectId"],
-                project["name"],
-                project["otherUserName"] ?? "empty",
-                project["status"],
-                project["createdAt"],
-              );
-            }),
+            ...projects.take(3).map(
+              (project) {
+                kPrint("Rendering project: ${project["name"]}");
+                return _buildProjectCard(
+                  context,
+                  project["projectId"],
+                  project["name"],
+                  project["otherUserName"] ?? "empty",
+                  project["status"],
+                  project["createdAt"],
+                );
+              },
+            ),
           ],
         );
       },
@@ -342,8 +346,9 @@ class HomeownerHomePage extends StatelessWidget {
             onPressed: () {
               Navigator.pushNamed(
                 context,
-                '/project_chat',
-                arguments: projectId, // Pass the correct projectId
+                '/message',
+                arguments: MessagePageArgs(
+                    projectId: projectId), // Pass the correct projectId
               );
             },
           )
@@ -465,7 +470,6 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-
 Widget _buildBottomNavBar(BuildContext context) {
   return BottomNavigationBar(
     backgroundColor: Colors.black,
@@ -497,7 +501,4 @@ Widget _buildBottomNavBar(BuildContext context) {
     ],
   );
 }
-
-
-
 }

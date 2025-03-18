@@ -27,6 +27,11 @@ class ServiceRequestPage extends StatefulWidget {
 class _ServiceRequestPageState extends State<ServiceRequestPage> {
   late Map<String, String> serviceRequest;
 
+  final GlobalKey<LoadingOverlayState> _loadingOverlayKey =
+      GlobalKey<LoadingOverlayState>();
+
+  bool isValid = false;
+
   @override
   void initState() {
     serviceRequest = {
@@ -45,8 +50,12 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
   }
 
   void updateMap(Map<String, String> updatedMap) {
+    for (String key in serviceRequest.keys) {
+      print("$key: ${serviceRequest[key]}");
+    }
     setState(() {
       serviceRequest = updatedMap;
+      isValid = isServiceRequestValid();
     });
   }
 
@@ -55,103 +64,130 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
   }
 
   Future<String> createProjectDocument() async {
+    _loadingOverlayKey.currentState?.show(); // Show loading overlay
+
     String projectId = Uuid().v4(); // Generate a unique ID
+    //projectId = "AB-CD"; // Generate a unique ID
 
     DocumentReference projectRef =
         _firestore.collection("projects").doc(projectId);
 
-    try {
-      // Create project document
-      await projectRef.set({
-        "homeownerId": widget.userID,
-        "contractorId": widget.contractorID,
-        "createdAt": FieldValue.serverTimestamp(),
-      });
+    if (mounted) {
+      try {
+        // Create project document
+        await projectRef.set({
+          "homeownerId": widget.userID,
+          "contractorId": widget.contractorID,
+          "createdAt": FieldValue.serverTimestamp(),
+        });
 
-      // Initialize "details" document
-      await projectRef.collection("data").doc("details").set({
-        "createdAt": FieldValue.serverTimestamp(),
-        "name": serviceRequest['projectName'],
-        "serviceType": serviceRequest['service'],
-        "serviceDetail": serviceRequest['details'],
-        "location": serviceRequest['location'],
-        "startDate": DateTime.parse(serviceRequest['startDate']!),
-        "endDate": DateTime.parse(serviceRequest['endDate']!),
-        "budgetMin": int.parse(serviceRequest['minBudget']!),
-        "budgetMax": int.parse(serviceRequest['maxBudget']!),
-        "comments": serviceRequest['additionalComment'],
-        "status": "service request",
-      });
+        await projectRef.collection("timeline").doc(Uuid().v4()).set({
+          "createdAt": FieldValue.serverTimestamp(),
+          "status": "serviceRequest",
+        });
 
-      // Initialize "pending quotation" document
-      await projectRef.collection("data").doc("pending quotation").set({
-        "createdAt": FieldValue.serverTimestamp(),
-        "details": "",
-        "startDate": null,
-        "endDate": null,
-        "itemList": {}, // Empty map for items
-      });
+        // Initialize "details" document
+        await projectRef.collection("data").doc("details").set({
+          "createdAt": FieldValue.serverTimestamp(),
+          "name": serviceRequest['projectName'],
+          "serviceType": serviceRequest['service'],
+          "serviceDetail": serviceRequest['details'],
+          "location": serviceRequest['location'],
+          "startDate": DateTime.parse(serviceRequest['startDate']!),
+          "endDate": DateTime.parse(serviceRequest['endDate']!),
+          "budgetMin": int.parse(serviceRequest['minBudget']!),
+          "budgetMax": int.parse(serviceRequest['maxBudget']!),
+          "comments": serviceRequest['additionalComment'],
+          "status": "serviceRequest",
+        });
 
-      // Initialize "quotation" document
-      await projectRef.collection("data").doc("quotation").set({
-        "createdAt": FieldValue.serverTimestamp(),
-        "details": "",
-        "startDate": null,
-        "endDate": null,
-        "itemList": {}, // Empty map for items
-        "status": "pending",
-        "dateResponse": null,
-        "finalPrice": 0,
-      });
+        // Initialize "pending quotation" document
+        await projectRef.collection("data").doc("pending quotation").set({
+          "createdAt": FieldValue.serverTimestamp(),
+          "details": "",
+          "startDate": null,
+          "endDate": null,
+          "itemList": {}, // Empty map for items
+        });
 
-      print("✅ Project created successfully: $projectId");
-      return projectId; // Return the new project ID
-    } catch (e) {
-      print("⚠ Error creating project: $e");
-      return ""; // Return empty string if failed
+        // Initialize "quotation" document
+        await projectRef.collection("data").doc("quotation").set({
+          "createdAt": FieldValue.serverTimestamp(),
+          "details": "",
+          "startDate": null,
+          "endDate": null,
+          "itemList": {}, // Empty map for items
+          "status": "pending",
+          "dateResponse": null,
+          "finalPrice": 0,
+        });
+
+        print("✅ Project created successfully: $projectId");
+
+        return projectId; // Return the new project ID
+      } catch (e) {
+        _loadingOverlayKey.currentState?.hide();
+        print("⚠ Error creating project: $e");
+        return ""; // Return empty string if failed
+      }
     }
+    return "";
   }
 
-  void onContinue() {
-    for (String key in serviceRequest.keys) {
-      print("$key: ${serviceRequest[key]}");
+  void onContinue() async {
+    final String projectID = await createProjectDocument();
+    _loadingOverlayKey.currentState?.hide();
+    if (projectID.isEmpty) {
+      return;
+    } else {
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/message',
+          arguments: MessagePageArgs(
+            projectId: projectID,
+            isFirstTime: true,
+          ),
+        );
+      }
     }
-
-    createProjectDocument();
     //TODO: Implement sending service request to firebase firestore
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const TitleBar(),
-            ServiceRequestBody(
-              serviceRequest: serviceRequest,
-              updateMap: updateMap,
-            ),
-          ],
+    return LoadingOverlay(
+      key: _loadingOverlayKey,
+      child: Scaffold(
+        body: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const TitleBar(),
+              ServiceRequestBody(
+                serviceRequest: serviceRequest,
+                updateMap: updateMap,
+              ),
+            ],
+          ),
         ),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: Stack(children: [
+            Container(
+              height: 70,
+              width: double.infinity,
+              color: Colors.grey[900],
+            ),
+            LargeOrangeButton.onlyText(
+              context,
+              onPressed: isValid ? onContinue : null,
+              text: 'Send Request',
+            ),
+          ]),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: Stack(children: [
-          Container(
-            height: 70,
-            width: double.infinity,
-            color: Colors.grey[900],
-          ),
-          LargeOrangeButton.onlyText(
-            context,
-            onPressed: onContinue,
-            text: 'Send Request',
-          ),
-        ]),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

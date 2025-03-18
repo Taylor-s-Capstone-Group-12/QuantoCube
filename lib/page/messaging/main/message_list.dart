@@ -98,6 +98,8 @@ class MessageList extends StatelessWidget {
 
     DateTime messageDate = message['time'].toLocal() ?? DateTime.now();
 
+    print('message type: ${message['type']}');
+
     switch (message['type']) {
       case 'message':
         return MessageBubble(
@@ -112,6 +114,21 @@ class MessageList extends StatelessWidget {
           onTap: message['onTap'] as VoidCallback,
           date: messageDate,
           attachmentType: message['attachmentType'] ?? 'Attachment',
+        );
+      case 'announcement':
+        print('Announcement');
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Center(
+            child: Text(
+              message['message'] ?? 'ERROR',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF8F9193),
+              ),
+            ),
+          ),
         );
       default:
         return const SizedBox();

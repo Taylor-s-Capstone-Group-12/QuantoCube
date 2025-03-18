@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -10,22 +11,28 @@ import 'package:uuid/uuid.dart';
 final FirebaseFirestore _firestore =
     FirebaseFirestore.instance; // Initialize Firestore
 
-class ServiceRequestPage extends StatefulWidget {
-  const ServiceRequestPage({
+class EditServiceRequestPage extends StatefulWidget {
+  const EditServiceRequestPage({
     super.key,
-    required this.userID,
-    required this.contractorID,
+    required this.projectID,
   });
 
-  final String userID;
-  final String contractorID;
+  final String projectID;
 
   @override
-  State<ServiceRequestPage> createState() => _ServiceRequestPageState();
+  State<EditServiceRequestPage> createState() => _EditServiceRequestPageState();
 }
 
-class _ServiceRequestPageState extends State<ServiceRequestPage> {
-  late Map<String, String> serviceRequest;
+class _EditServiceRequestPageState extends State<EditServiceRequestPage> {
+  Map<String, String> serviceRequest = {
+    'createdAt': '',
+    'service': '',
+    'details': '',
+    'location': '',
+    'startDate': '',
+    'endDate': '',
+    'additionalComment': '',
+  };
 
   final GlobalKey<LoadingOverlayState> _loadingOverlayKey =
       GlobalKey<LoadingOverlayState>();
@@ -34,19 +41,35 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
 
   @override
   void initState() {
-    serviceRequest = {
-      'userID': widget.userID,
-      'contractorID': widget.contractorID,
-      'createdAt': FieldValue.serverTimestamp().toString(),
-      'service': '',
-      'details': '',
-      'location': '',
-      'startDate': '',
-      'endDate': '',
-      'additionalComment': '',
-    };
-
+    getServiceDetails();
     super.initState();
+  }
+
+  Future<void> getServiceDetails() async {
+    await _firestore
+        .collection('projects')
+        .doc(widget.projectID)
+        .collection('data')
+        .doc('details')
+        .get()
+        .then((DocumentSnapshot documentSnapshot) {
+      if (documentSnapshot.exists) {
+        setState(() {
+          serviceRequest['service'] = documentSnapshot['serviceType'];
+          serviceRequest['details'] = documentSnapshot['serviceDetail'];
+          serviceRequest['location'] = documentSnapshot['location'];
+          serviceRequest['startDate'] =
+              (documentSnapshot['startDate'] as Timestamp).toDate().toString();
+          serviceRequest['endDate'] =
+              (documentSnapshot['endDate'] as Timestamp).toDate().toString();
+          serviceRequest['minBudget'] =
+              documentSnapshot['budgetMin'].toString();
+          serviceRequest['maxBudget'] =
+              documentSnapshot['budgetMax'].toString();
+          serviceRequest['additionalComment'] = documentSnapshot['comments'];
+        });
+      }
+    });
   }
 
   void updateMap(Map<String, String> updatedMap) {
@@ -63,23 +86,15 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
     return serviceRequest['service'] != '';
   }
 
-  Future<String> createProjectDocument() async {
+  Future<void> saveProjectDocument() async {
     _loadingOverlayKey.currentState?.show(); // Show loading overlay
 
-    String projectId = Uuid().v4(); // Generate a unique ID
-    //projectId = "AB-CD"; // Generate a unique ID
-
     DocumentReference projectRef =
-        _firestore.collection("projects").doc(projectId);
+        _firestore.collection("projects").doc(widget.projectID);
 
     if (mounted) {
       try {
         // Create project document
-        await projectRef.set({
-          "homeownerId": widget.userID,
-          "contractorId": widget.contractorID,
-          "createdAt": FieldValue.serverTimestamp(),
-        });
 
         await projectRef.collection("timeline").doc(Uuid().v4()).set({
           "createdAt": FieldValue.serverTimestamp(),
@@ -101,69 +116,33 @@ class _ServiceRequestPageState extends State<ServiceRequestPage> {
           "status": "serviceRequest",
           "serviceStatus": "pending",
         });
-
-        // Initialize "pending quotation" document
-        await projectRef.collection("data").doc("pending quotation").set({
-          "createdAt": FieldValue.serverTimestamp(),
-          "details": "",
-          "startDate": null,
-          "endDate": null,
-          "itemList": {}, // Empty map for items
-        });
-
-        // Initialize "quotation" document
-        await projectRef.collection("data").doc("quotation").set({
-          "createdAt": FieldValue.serverTimestamp(),
-          "details": "",
-          "startDate": null,
-          "endDate": null,
-          "itemList": {}, // Empty map for items
-          "status": "pending",
-          "dateResponse": null,
-          "finalPrice": 0,
-        });
-
-        print("✅ Project created successfully: $projectId");
-
-        return projectId; // Return the new project ID
       } catch (e) {
         _loadingOverlayKey.currentState?.hide();
         print("⚠ Error creating project: $e");
-        return ""; // Return empty string if failed
       }
     }
-    return "";
   }
 
   void onContinue() async {
-    final String projectID = await createProjectDocument();
-    if (projectID.isEmpty) {
-      return;
-    } else {
-      if (mounted) {
-        await _firestore
-            .collection('projects')
-            .doc(projectID)
-            .collection('chat')
-            .add({
-          'attachmentType': 'Service Request',
-          'message': serviceRequest['details'],
-          'time': FieldValue.serverTimestamp(),
-          'type': 'attachment',
-          'sender': widget.userID,
-        });
+    await saveProjectDocument();
+    if (mounted) {
+      await _firestore
+          .collection('projects')
+          .doc(widget.projectID)
+          .collection('chat')
+          .add({
+        'attachmentType': 'Service Request',
+        'message': serviceRequest['details'],
+        'time': FieldValue.serverTimestamp(),
+        'type': 'attachment',
+        'sender': FirebaseAuth.instance.currentUser!.uid,
+      });
 
-        _loadingOverlayKey.currentState?.hide();
+      _loadingOverlayKey.currentState?.hide();
 
-        Navigator.pushNamed(
-          context,
-          '/message',
-          arguments: MessagePageArgs(
-            projectId: projectID,
-            isFirstTime: true,
-          ),
-        );
-      }
+      Navigator.pop(
+        context,
+      );
     }
   }
 
@@ -268,10 +247,14 @@ class _ServiceRequestBodyState extends State<ServiceRequestBody> {
 
   @override
   void initState() {
-    projectNameController = TextEditingController();
-    serviceDetailsController = TextEditingController();
-    locationController = TextEditingController();
-    additionalCommentsController = TextEditingController();
+    projectNameController =
+        TextEditingController(text: widget.serviceRequest['projectName']);
+    serviceDetailsController =
+        TextEditingController(text: widget.serviceRequest['details']);
+    locationController =
+        TextEditingController(text: widget.serviceRequest['location']);
+    additionalCommentsController =
+        TextEditingController(text: widget.serviceRequest['additionalComment']);
 
     projectNameController.addListener(() {
       widget.serviceRequest['projectName'] = projectNameController.text;
@@ -292,6 +275,14 @@ class _ServiceRequestBodyState extends State<ServiceRequestBody> {
     });
 
     super.initState();
+  }
+
+  void updateControllerValues() {
+    projectNameController.text = widget.serviceRequest['projectName']!;
+    serviceDetailsController.text = widget.serviceRequest['details']!;
+    locationController.text = widget.serviceRequest['location']!;
+    additionalCommentsController.text =
+        widget.serviceRequest['additionalComment']!;
   }
 
   void onServiceSelect(String service) {
@@ -488,15 +479,18 @@ class TextInputBox extends StatelessWidget {
     required this.controller,
     required this.hintText,
     this.maxLines = 5,
+    this.initialValue,
   });
 
   final TextEditingController controller;
   final String hintText;
   final int maxLines;
+  final String? initialValue;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      initialValue: initialValue,
       maxLines: maxLines,
       controller: controller,
       style: const TextStyle(

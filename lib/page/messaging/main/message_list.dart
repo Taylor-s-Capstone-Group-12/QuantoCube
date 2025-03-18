@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -7,10 +8,22 @@ class MessageList extends StatelessWidget {
     super.key,
     required this.chatList,
     this.isFirstTime,
+    required this.userId,
+    required this.controller,
   });
 
   final List<Map<String, dynamic>> chatList;
   final bool? isFirstTime;
+  final String userId;
+  final ScrollController controller;
+
+  bool isSender(int index) {
+    if (userId == chatList[index]['sender']) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +31,7 @@ class MessageList extends StatelessWidget {
       width: MediaQuery.of(context).size.width,
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: ListView.builder(
+        controller: controller,
         itemCount: chatList.length + (isFirstTime == true ? 1 : 0),
         itemBuilder: (context, index) {
           if (isFirstTime == true && index == 0) {
@@ -38,12 +52,16 @@ class MessageList extends StatelessWidget {
           final adjustedIndex = isFirstTime == true ? index - 1 : index;
           final message = chatList[adjustedIndex];
 
-          DateTime messageDate = message['date'];
+          DateTime messageDate = message['time'];
           String formattedDate = DateFormat('MMMM d, yyyy').format(messageDate);
 
           bool showDateHeader = adjustedIndex == 0 ||
-              DateFormat('yyyy-MM-dd')
-                      .format(chatList[adjustedIndex - 1]['date']) !=
+              DateFormat('yyyy-MM-dd').format(
+                    (chatList[adjustedIndex - 1]['time'] is Timestamp)
+                        ? (chatList[adjustedIndex - 1]['time'] as Timestamp)
+                            .toDate()
+                        : DateTime.now(), // Fallback for null timestamps
+                  ) !=
                   DateFormat('yyyy-MM-dd').format(messageDate);
 
           return Column(
@@ -63,7 +81,7 @@ class MessageList extends StatelessWidget {
                     ),
                   ),
                 ),
-              _buildMessageItem(message),
+              _buildMessageItem(message, index),
             ],
           );
         },
@@ -71,20 +89,28 @@ class MessageList extends StatelessWidget {
     );
   }
 
-  Widget _buildMessageItem(Map<String, dynamic> message) {
+  Widget _buildMessageItem(Map<String, dynamic> message, int index) {
+    // Convert Firestore Timestamp to DateTime safely, handling null values
+    // DateTime messageDate = message['time'] is Timestamp
+    //     ? (message['time'] as Timestamp).toDate()
+    //     : DateTime
+    //         .now(); // Fallback if Firestore hasn't assigned a timestamp yet
+
+    DateTime messageDate = message['time'].toLocal() ?? DateTime.now();
+
     switch (message['type']) {
       case 'message':
         return MessageBubble(
           message: message['message'] ?? 'ERROR',
-          isSender: bool.parse(message['isSender'] ?? 'true'),
-          date: message['date'],
+          isSender: isSender(index),
+          date: messageDate,
         );
       case 'attachment':
         return AttachmentBubble(
           message: message['message'] ?? 'ERROR',
-          isSender: bool.parse(message['isSender'] ?? 'true'),
+          isSender: isSender(index),
           onTap: message['onTap'] as VoidCallback,
-          date: message['date'],
+          date: messageDate,
         );
       default:
         return const SizedBox();
@@ -135,7 +161,7 @@ class MessageBubble extends StatelessWidget {
         const SizedBox(height: 3),
         Padding(
           padding: EdgeInsets.only(
-              left: isSender ? 0 : 10, right: isSender ? 10 : 0),
+              left: isSender ? 0 : 10, right: isSender ? 10 : 0, bottom: 5),
           child: Text(
             _formatChatTime(date),
             style: TextStyle(
@@ -251,7 +277,7 @@ class AttachmentBubble extends StatelessWidget {
         const SizedBox(height: 3),
         Padding(
           padding: EdgeInsets.only(
-              left: isSender ? 0 : 10, right: isSender ? 10 : 0),
+              left: isSender ? 0 : 10, right: isSender ? 10 : 0, bottom: 5),
           child: Text(
             _formatChatTime(date),
             style: TextStyle(

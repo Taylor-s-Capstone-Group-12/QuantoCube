@@ -48,10 +48,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ProjectTheme.theme,
-      home: ServiceRequestPage(
-        userID: '00',
-        contractorID: '01',
-      ),
+      home: const SplashScreen(),
+      //home: ContractorHomePage(userName:'testuser'),
       navigatorObservers: [
         KeyboardDismissNavigatorObserver(),
       ],

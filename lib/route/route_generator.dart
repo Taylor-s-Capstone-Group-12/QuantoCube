@@ -4,6 +4,7 @@ import 'package:quantocube/components/components.dart';
 import 'package:quantocube/page/homeowner/homeowner_homepage.dart';
 import 'package:quantocube/page/homeowner/listing/contractor_profile.dart';
 import 'package:quantocube/page/homeowner/listing/contractor_profile_page.dart';
+import 'package:quantocube/page/homeowner/listing/project_chat.dart';
 import 'package:quantocube/page/auth/auth_selection.dart';
 import 'package:quantocube/page/auth/login_page.dart';
 import 'package:quantocube/data/contractor/contractor_data.dart';
@@ -67,6 +68,13 @@ class RouteGenerator {
         return _errorRoute();
       case '/messaging_list':
         return CupertinoPageRoute(builder: (_) => const ChatListPage());
+      case '/project_chat':
+        if (args is String) {
+          return CupertinoPageRoute(
+            builder: (_) => ProjectChat(projectId: args),
+          );
+        }
+        return _errorRoute();
       case '/message':
         if (args is MessagePageArgs) {
           return CupertinoPageRoute(

@@ -18,6 +18,21 @@ class Utils {
   }
 }
 
+Future<String?> getNameFromId(String id) async {
+  try {
+    DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(id).get();
+    if (userDoc.exists) {
+      return userDoc['name'] as String?;
+    } else {
+      return null;
+    }
+  } catch (e) {
+    kPrint("Error fetching name from ID: $e");
+    return null;
+  }
+}
+
 Future<String?> getOtherUserName(bool isHomeowner, String projectId) async {
   try {
     FirebaseFirestore firestore = FirebaseFirestore.instance;

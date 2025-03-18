@@ -47,11 +47,11 @@ class _MessagePageState extends State<MessagePage> {
     isHomeowner = await getUserType(userId);
 
     await getRecepient(); // Wait for the recipient to load
-    await loadMessages().then((_) {
-      Future.delayed(Duration(milliseconds: 300), () {
-        _scrollToBottom();
-      });
-    }); // Wait for messages to load
+    // await loadMessages().then((_) {
+    //   Future.delayed(Duration(milliseconds: 300), () {
+    //     _scrollToBottom();
+    //   });
+    // }); // Wait for messages to load
 
     setState(() {}); // Refresh UI
   }
@@ -132,65 +132,93 @@ class _MessagePageState extends State<MessagePage> {
     }
   }
 
+  void sendToFireBase(Map<String, dynamic> map) {
+    _firestore
+        .collection('projects')
+        .doc(widget.projectId)
+        .collection('chat')
+        .add(map);
+  }
+
   void sendMessage(String message) {
     try {
-      DateTime localTime = DateTime.now(); // Local timestamp
+      DateTime localTime = DateTime.now();
+      String tempID = DateTime.now().millisecondsSinceEpoch.toString();
 
-      setState(() {
-        ChatData.add({
-          'sender': userId,
-          'type': 'message',
-          'message': message,
-          'time': localTime, // Local timestamp to display immediately
-          'isPending': true, // Mark as pending to visually indicate it's unsent
-        });
-      });
+      // Add to local state immediately
+      // setState(() {
+      //   ChatData.add({
+      //     'id': tempID, // Temporary ID
+      //     'sender': userId,
+      //     'type': 'message',
+      //     'message': message,
+      //     'time': localTime,
+      //     'isPending': true, // Mark as pending
+      //   });
+      // });
 
-      // Scroll to the bottom after adding the message
+      // Scroll smoothly
       Future.delayed(const Duration(milliseconds: 100), () {
         _scrollToBottom();
       });
 
-      // Send to Firestore with server timestamp
-      _firestore
-          .collection('projects')
-          .doc(widget.projectId)
-          .collection('chat')
-          .add({
+      // Send to Firestore
+      sendToFireBase({
         'sender': userId,
         'type': 'message',
         'message': message,
-        'time': FieldValue.serverTimestamp(), // Will be set later by Firestore
-      }).then((docRef) {
-        // Once Firestore assigns a timestamp, update our local message
-        docRef.get().then((docSnapshot) {
-          if (docSnapshot.exists) {
-            Map<String, dynamic> newData =
-                docSnapshot.data() as Map<String, dynamic>;
-            if (newData['time'] is Timestamp) {
-              DateTime serverTime = (newData['time'] as Timestamp).toDate();
-
-              setState(() {
-                // Replace the pending message with the Firestore-stored message
-                int index = ChatData.indexWhere((msg) =>
-                    msg['message'] == message && msg['isPending'] == true);
-                if (index != -1) {
-                  ChatData[index] = {
-                    ...ChatData[index],
-                    'time': serverTime,
-                    'isPending': false, // No longer pending
-                  };
-                }
-              });
-            }
-          }
-        });
+        'time': FieldValue.serverTimestamp(),
       });
+
+      // .then((docRef) {
+      //   docRef.get().then((docSnapshot) {
+      //     if (docSnapshot.exists) {
+      //       Map<String, dynamic> newData =
+      //           docSnapshot.data() as Map<String, dynamic>;
+      //       if (newData['time'] is Timestamp) {
+      //         DateTime serverTime = (newData['time'] as Timestamp).toDate();
+
+      //         // Update local state with server timestamp
+      //         setState(() {
+      //           int index = ChatData.indexWhere((msg) => msg['id'] == tempID);
+      //           if (index != -1) {
+      //             ChatData[index] = {
+      //               ...ChatData[index],
+      //               'time': serverTime,
+      //               'isPending': false, // No longer pending
+      //             };
+      //           }
+      //         });
+      //       }
+      //     }
+      //   });
+      // });
 
       // Clear the input field
       _controller.clear();
     } catch (e) {
       kPrint("Error sending message: $e");
+    }
+  }
+
+  void assignOnTap(Map<String, dynamic> map) {
+    if (map['type'] == 'attachment') {
+      switch (map['attachmentType']) {
+        case 'Service Request':
+          map['onTap'] = () {
+            kPrint('Service Request tapped');
+            Navigator.pushNamed(context, '/message/service-request',
+                arguments: widget.projectId);
+          };
+        case 'Quotation':
+          map['onTap'] = () {
+            kPrint('Quotation tapped');
+          };
+        default:
+          map['onTap'] = () {
+            kPrint('Attachment tapped');
+          };
+      }
     }
   }
 
@@ -201,48 +229,74 @@ class _MessagePageState extends State<MessagePage> {
       body: Column(
         children: [
           Expanded(
-            child: GestureDetector(
-              onTap: () => focusNode.unfocus(),
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('projects')
-                    .doc(widget.projectId)
-                    .collection('chat')
-                    .orderBy('time', descending: false)
-                    .snapshots(), // 🔥 Real-time updates
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+            child: (otherUserName == 'Loading...')
+                ? const Center(child: CircularProgressIndicator())
+                : GestureDetector(
+                    onTap: () => focusNode.unfocus(),
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('projects')
+                          .doc(widget.projectId)
+                          .collection('chat')
+                          .orderBy('time', descending: false)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return const Center(
+                              child: Text("Error loading messages."));
+                        }
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(child: Text("No messages yet."));
-                  }
+                        // 🔥 Keep showing old messages while Firestore updates
+                        List<Map<String, dynamic>> firestoreMessages =
+                            snapshot.data?.docs.map((doc) {
+                                  var data = doc.data() as Map<String, dynamic>;
+                                  return {
+                                    ...data,
+                                    'time': (data['time'] as Timestamp?)
+                                            ?.toDate() ??
+                                        DateTime.now(),
+                                    'isPending':
+                                        false, // Firestore messages are confirmed
+                                  };
+                                }).toList() ??
+                                [];
 
-                  List<Map<String, dynamic>> chatList =
-                      snapshot.data!.docs.map((doc) {
-                    var data = doc.data() as Map<String, dynamic>;
+                        // Use local messages first while Firestore loads
+                        List<Map<String, dynamic>> allMessages = [
+                          ...firestoreMessages,
+                          ...ChatData
+                        ];
 
-                    return {
-                      ...data,
-                      'time': (data['time'] as Timestamp?)?.toDate() ??
-                          DateTime.now(),
-                    };
-                  }).toList();
+                        // Ensure unique messages (remove duplicates)
+                        allMessages = allMessages.toSet().toList();
 
-                  // Scroll to bottom when messages update
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _scrollToBottom();
-                  });
+                        // Sort messages by time
+                        allMessages
+                            .sort((a, b) => a['time'].compareTo(b['time']));
 
-                  return MessageList(
-                    userId: userId,
-                    chatList: chatList,
-                    controller: _scrollController,
-                  );
-                },
-              ),
-            ),
+                        allMessages.forEach(assignOnTap);
+
+                        // Only show loading indicator if it's the very first load
+                        if (snapshot.connectionState ==
+                                ConnectionState.waiting &&
+                            ChatData.isEmpty) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+
+                        // Scroll to bottom when messages update
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollToBottom();
+                        });
+
+                        return MessageList(
+                          userId: userId,
+                          chatList: allMessages,
+                          controller: _scrollController,
+                        );
+                      },
+                    ),
+                  ),
           ),
           MessageInput(
             controller: _controller,

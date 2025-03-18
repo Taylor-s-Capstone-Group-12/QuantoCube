@@ -12,6 +12,7 @@ import 'package:quantocube/page/auth/login_page.dart';
 import 'package:quantocube/data/contractor/contractor_data.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
 import 'package:quantocube/page/homeowner/listing/service_request_page.dart';
+import 'package:quantocube/page/messaging/attachment/service_request_preview.dart';
 import 'package:quantocube/page/messaging/chat_list_page.dart';
 import 'package:quantocube/page/messaging/main/message_page.dart';
 import 'package:quantocube/page/onboarding/introduction_page.dart';
@@ -99,8 +100,15 @@ class RouteGenerator {
           );
         }
         return _errorRoute();
+      case '/message/service-request':
+        if (args is String) {
+          return CupertinoPageRoute(
+              builder: (context) => ServiceRequestPreviewPage(projectId: args));
+        } else {
+          return _errorRoute();
+        }
       case '/name_search':
-          return CupertinoPageRoute(builder: (_) => NameSearchPage());
+        return CupertinoPageRoute(builder: (_) => NameSearchPage());
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();

@@ -111,6 +111,7 @@ class MessageList extends StatelessWidget {
           isSender: isSender(index),
           onTap: message['onTap'] as VoidCallback,
           date: messageDate,
+          attachmentType: message['attachmentType'] ?? 'Attachment',
         );
       default:
         return const SizedBox();

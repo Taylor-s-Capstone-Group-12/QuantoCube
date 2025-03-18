@@ -28,134 +28,76 @@ class _ProjectOverviewState extends State<ProjectOverview> {
     _scrollController.addListener(_onScroll);
   }
 
-  /// 📌 Step 1: Fetch User Data (User ID & Type)
   Future<void> _initializeData() async {
-    debugPrint("📡 [INIT] Fetching user data...");
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        debugPrint("🚨 [INIT] No authenticated user found.");
-        return;
-      }
+    _currentUserId = user.uid;
+    _isHomeowner = await _getUserType(_currentUserId);
 
-      _currentUserId = user.uid;
-      debugPrint("✅ [INIT] User ID: $_currentUserId");
-
-      _isHomeowner = await _getUserType(_currentUserId);
-      debugPrint(
-          "🏠 [INIT] User Type: ${_isHomeowner ? "Homeowner" : "Contractor"}");
-
-      debugPrint("📡 [INIT] Fetching initial projects...");
-      await _fetchProjects();
-    } catch (e) {
-      debugPrint("❌ [INIT] Error fetching user data: $e");
-    }
+    await _fetchProjects(initialLoad: true);
   }
 
-  /// 📌 Step 2: Determine User Type (Homeowner or Contractor)
   Future<bool> _getUserType(String uid) async {
     try {
-      debugPrint("📡 [USER TYPE] Fetching user type for UID: $uid");
       DocumentSnapshot userDoc =
           await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-      if (!userDoc.exists) {
-        debugPrint("🚫 [USER TYPE] No user document found for UID: $uid");
-        return false;
-      }
+      if (!userDoc.exists) return false;
 
       dynamic isHomeownerValue = userDoc['isHomeowner'];
       if (isHomeownerValue is bool) return isHomeownerValue;
-      if (isHomeownerValue is String)
-        return isHomeownerValue.toLowerCase() == 'true';
+      if (isHomeownerValue is String) return isHomeownerValue.toLowerCase() == 'true';
 
-      debugPrint(
-          "⚠️ [USER TYPE] Unexpected type for 'isHomeowner': $isHomeownerValue");
       return false;
     } catch (e) {
-      debugPrint("❌ [USER TYPE] Error fetching user type: $e");
       return false;
     }
   }
 
-  /// 📌 Step 3: Fetch Ongoing Projects
-  Future<void> _fetchProjects() async {
-    if (_isLoading || !_hasMore) {
-      debugPrint(
-          "⏳ [PROJECTS] Skipping fetch - Either still loading or no more projects.");
-      return;
-    }
+  Future<void> _fetchProjects({bool initialLoad = false}) async {
+    if (_isLoading || !_hasMore) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    debugPrint("📡 [PROJECTS] Fetching projects (Limit: 5)...");
-
+    int fetchLimit = 9;
     try {
       List<Map<String, dynamic>> newProjects = await fetchOngoingProjects(
         currentUserId: _currentUserId,
         isHomeowner: _isHomeowner,
-        limit: 5,
+        limit: fetchLimit,
         lastDocument: _lastDocument,
       );
-
-      debugPrint("📊 [PROJECTS] Fetched ${newProjects.length} projects");
 
       setState(() {
         if (newProjects.isEmpty) {
           _hasMore = false;
         } else {
           _projects.addAll(newProjects);
-          _lastDocument =
-              newProjects.last['documentSnapshot'] as DocumentSnapshot?;
+          _lastDocument = newProjects.last['documentSnapshot'] as DocumentSnapshot?;
         }
       });
     } catch (e) {
-      debugPrint("❌ [PROJECTS] Error fetching projects: $e");
+      debugPrint("❌ Error fetching projects: $e");
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
-  /// 📌 Step 4: Infinite Scrolling
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 100 &&
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
         !_isLoading &&
         _hasMore) {
-      debugPrint("🔽 [SCROLL] Near bottom - Fetching more projects...");
       _fetchProjects();
     }
   }
 
-  /// 📌 Step 5: Format Status
-  String _formatStatus(String status) {
-    if (status.isEmpty) return '';
-    String spaced = status.replaceAllMapped(
-        RegExp(r'(?<=[a-z])[A-Z]'), (match) => ' ${match.group(0)}');
-    return spaced[0].toUpperCase() + spaced.substring(1);
-  }
-
-  /// 📌 Step 6: Format Date
-  String _formatDate(Timestamp timestamp) {
-    DateTime date = timestamp.toDate();
-    return "${date.year}-${date.month}-${date.day}";
-  }
-
-  /// 📌 Step 7: Build Project Card UI
   Widget _buildProjectCard(BuildContext context, Map<String, dynamic> project) {
     final String projectId = project["projectId"];
     final String projectName = project["name"] ?? "Unnamed Project";
     final String otherUserName = project["otherUserName"] ?? "Unknown";
     final String status = project["status"] ?? "unknown";
     final Timestamp createdAt = project["createdAt"] ?? Timestamp.now();
-
-    debugPrint(
-        "🎨 [UI] Building Project Card - ID: $projectId, Name: $projectName, Status: $status");
 
     return Card(
       color: Colors.grey[900],
@@ -167,65 +109,60 @@ class _ProjectOverviewState extends State<ProjectOverview> {
           "assets/icons/project/$status.png",
           width: 50,
           height: 50,
-          errorBuilder: (context, error, stackTrace) {
-            debugPrint(
-                "❌ [UI] Error loading project image for status: $status");
-            return const Icon(Icons.image, color: Colors.white54);
-          },
+          errorBuilder: (context, error, stackTrace) => const Icon(Icons.image, color: Colors.white54),
         ),
         title: Text(projectName,
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold)),
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
         subtitle: Text("${_formatDate(createdAt)} • $otherUserName",
             style: TextStyle(color: Colors.grey[500], fontSize: 12)),
         trailing: IconButton(
-          icon: const Icon(Icons.arrow_forward_ios,
-              color: Colors.white, size: 16),
-          onPressed: () {
-            debugPrint("➡ [UI] Navigating to Project Chat: $projectId");
-            Navigator.pushNamed(
-              context,
-              '/message',
-              arguments: MessagePageArgs(
-                  projectId: projectId), // Pass the correct projectId
-            );
-          },
+          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+          onPressed: () => Navigator.pushNamed(context, '/message',
+              arguments: MessagePageArgs(projectId: projectId)),
         ),
       ),
     );
   }
 
+  String _formatDate(Timestamp timestamp) {
+    DateTime date = timestamp.toDate();
+    return "${date.year}-${date.month}-${date.day}";
+  }
+
   @override
   Widget build(BuildContext context) {
-    debugPrint(
-        "🔄 [UI] Rebuilding Project Overview | Projects Count: ${_projects.length}");
-
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
           title: const Text("Project Overview"),
           backgroundColor: Colors.grey[900]),
-      body: _isLoading && _projects.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : _projects.isEmpty
-              ? const Center(
-                  child: Text("No projects found",
-                      style: TextStyle(color: Colors.white)))
-              : ListView.builder(
-                  controller: _scrollController,
-                  itemCount: _projects.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index < _projects.length) {
-                      return _buildProjectCard(context, _projects[index]);
-                    } else {
-                      return _isLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : const SizedBox();
-                    }
-                  },
-                ),
+      body: Column(
+        children: [
+          Expanded(
+            child: _isLoading && _projects.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : _projects.isEmpty
+                    ? const Center(
+                        child: Text("No projects found",
+                            style: TextStyle(color: Colors.white)))
+                    : ListView.builder(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: _projects.length + (_hasMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index < _projects.length) {
+                            return _buildProjectCard(context, _projects[index]);
+                          } else {
+                            return const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                        },
+                      ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,34 +1,43 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// 🔹 Fetch Ongoing Projects (Latest 3)
+/// 🔹 Fetch Ongoing Projects with Pagination
 Future<List<Map<String, dynamic>>> fetchOngoingProjects({
   required String currentUserId,
   required bool isHomeowner,
-  int limit = 3,
+  int limit = 5,
+  DocumentSnapshot? lastDocument, // ✅ Added lastDocument for pagination
 }) async {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Map<String, dynamic>> projects = [];
 
   try {
     String userField = isHomeowner ? "homeownerId" : "contractorId";
-    String otherUserField =
-        isHomeowner ? "contractorId" : "homeownerId"; // Get the other user's ID
+    String otherUserField = isHomeowner ? "contractorId" : "homeownerId";
 
     print("🔍 Searching projects where $userField == $currentUserId");
 
-    // 1️⃣ Query latest projects where user is homeowner/contractor, sorted by `createdAt`
-    QuerySnapshot projectSnapshot = await _firestore
+    // ✅ 1️⃣ Query latest projects where user is homeowner/contractor
+    Query query = _firestore
         .collection("projects")
         .where(userField, isEqualTo: currentUserId)
-        .orderBy("createdAt", descending: true) // Ensure createdAt is indexed!
-        .limit(limit) // Only latest 3 projects
-        .get();
+        .orderBy("createdAt", descending: true)
+        .limit(limit);
 
+    // ✅ If we have a lastDocument, start after it for pagination
+    if (lastDocument != null) {
+      query = query.startAfterDocument(lastDocument);
+    }
+
+    QuerySnapshot projectSnapshot = await query.get();
     print("📂 Found ${projectSnapshot.docs.length} matching projects");
 
-    if (projectSnapshot.docs.isEmpty) return []; // No projects found
+    if (projectSnapshot.docs.isEmpty) return [];
 
-    // 2️⃣ Fetch project details from "data" subcollection & Other User Name
+    // ✅ Store the last document for pagination
+    DocumentSnapshot? newLastDocument =
+        projectSnapshot.docs.isNotEmpty ? projectSnapshot.docs.last : null;
+
+    // ✅ 2️⃣ Fetch project details & Other User Name
     List<Future<Map<String, dynamic>?>> projectDetailsFutures =
         projectSnapshot.docs.map((doc) {
       Map<String, dynamic> projectData = doc.data() as Map<String, dynamic>;
@@ -37,12 +46,17 @@ Future<List<Map<String, dynamic>>> fetchOngoingProjects({
       return _fetchProjectDetails(
         _firestore,
         doc.id,
-        projectData["createdAt"] ?? Timestamp.now(), // Pass parent createdAt
-        otherUserId, // Pass other user's ID
-      );
+        projectData["createdAt"] ?? Timestamp.now(),
+        otherUserId,
+      ).then((projectDetails) {
+        if (projectDetails != null) {
+          projectDetails["documentSnapshot"] = doc; // ✅ Save last document
+        }
+        return projectDetails;
+      });
     }).toList();
 
-    // 3️⃣ Wait for all data fetches to complete
+    // ✅ 3️⃣ Wait for all data fetches to complete
     List<Map<String, dynamic>?> results =
         await Future.wait(projectDetailsFutures);
     projects =
@@ -50,6 +64,7 @@ Future<List<Map<String, dynamic>>> fetchOngoingProjects({
 
     print("📊 Retrieved ${projects.length} project details");
 
+    // ✅ Return projects with lastDocument info
     return projects;
   } catch (e) {
     print("⚠ Error fetching projects: $e");
@@ -57,13 +72,12 @@ Future<List<Map<String, dynamic>>> fetchOngoingProjects({
   }
 }
 
-/// 🔹 Fetch Project Details from "data" subcollection (Only "details" doc) + Fetch Other User's Name
+/// 🔹 Fetch Project Details from "data" subcollection + Fetch Other User's Name
 Future<Map<String, dynamic>?> _fetchProjectDetails(FirebaseFirestore firestore,
     String projectId, Timestamp parentCreatedAt, String otherUserId) async {
   try {
     print("🔍 Fetching 'details' document for project: $projectId");
 
-    // ✅ Fetch the specific "details" document
     DocumentSnapshot detailsDoc = await firestore
         .collection("projects")
         .doc(projectId)
@@ -81,15 +95,14 @@ Future<Map<String, dynamic>?> _fetchProjectDetails(FirebaseFirestore firestore,
 
     print("✅ Found 'name': ${detailsData["name"]} for project: $projectId");
 
-    // ✅ Fetch the other user's name
     String otherUserName = await _fetchUserName(firestore, otherUserId);
 
     return {
       "projectId": projectId,
       "name": detailsData["name"] ?? "Unnamed Project",
-      "createdAt": parentCreatedAt, // ✅ Use parent document's createdAt
+      "createdAt": parentCreatedAt,
       "status": detailsData["status"] ?? "Unknown",
-      "otherUserName": otherUserName, // ✅ Include the other user's name
+      "otherUserName": otherUserName,
     };
   } catch (e) {
     print("⚠ Error fetching 'details' document for $projectId: $e");
@@ -133,18 +146,8 @@ String formatDate(Timestamp timestamp) {
 /// 🔹 Convert Month Number to Name
 String _getMonthName(int month) {
   const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December"
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
   ];
   return months[month - 1];
 }

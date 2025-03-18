@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:quantocube/components/components.dart';
 import 'package:quantocube/page/homeowner/homeowner_homepage.dart';
+import 'package:quantocube/page/homeowner/project_overview.dart';
 import 'package:quantocube/page/homeowner/listing/contractor_profile.dart';
 import 'package:quantocube/page/homeowner/listing/contractor_profile_page.dart';
 import 'package:quantocube/page/homeowner/listing/project_chat.dart';
@@ -68,6 +69,8 @@ class RouteGenerator {
         return _errorRoute();
       case '/messaging_list':
         return CupertinoPageRoute(builder: (_) => const ChatListPage());
+      case '/project_overview':
+        return CupertinoPageRoute(builder: (_) => const ProjectOverview());
       case '/project_chat':
         if (args is String) {
           return CupertinoPageRoute(

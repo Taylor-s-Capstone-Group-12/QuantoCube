@@ -52,30 +52,30 @@ Future<String?> getOtherUserName(bool isHomeowner, String projectId) async {
 
 Future<bool> getUserType(String uid) async {
   try {
-    kPrint("📡 Fetching userType for UID: $uid");
+    print("📡 Fetching userType for UID: $uid");
 
     // Reference to Firestore users collection
     DocumentSnapshot userDoc =
         await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
     if (userDoc.exists) {
-      kPrint("📜 Firestore Document Data: ${userDoc.data()}");
+      print("📜 Firestore Document Data: ${userDoc.data()}");
       // ✅ Check if 'isHomeowner' exists before accessing it
       if (userDoc.data() != null &&
           (userDoc.data() as Map).containsKey('isHomeowner')) {
         bool isHomeowner = userDoc['isHomeowner'] as bool? ?? false;
-        kPrint("✅ isHomeowner: $isHomeowner");
+        print("✅ isHomeowner: $isHomeowner");
         return isHomeowner;
       } else {
-        kPrint("🚫 'isHomeowner' field is missing in Firestore.");
+        print("🚫 'isHomeowner' field is missing in Firestore.");
         return false;
       }
     } else {
-      kPrint("🚫 User document not found for UID: $uid");
+      print("🚫 User document not found for UID: $uid");
       return false;
     }
   } catch (e) {
-    kPrint("❌ Error fetching user type: $e");
+    print("❌ Error fetching user type: $e");
     return false;
   }
 }

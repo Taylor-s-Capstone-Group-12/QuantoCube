@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:quantocube/components/buttons/large_orange_button.dart';
 import 'package:quantocube/components/widgets/text_field.dart';
 import 'package:quantocube/page/homeowner/legal/eula_tos_page.dart';
-import 'package:quantocube/page/auth/signup/name_setup_page.dart';
+import 'package:quantocube/page/auth/signup/phone_number_page.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({
@@ -95,6 +95,7 @@ class _SignUpContentState extends State<SignUpContent> {
     super.initState();
     signUpData = {
       'email': '',
+      'phone': '',
       'name': '',
       'password': '',
       'receiveNewsletters': 'true',
@@ -120,7 +121,7 @@ class _SignUpContentState extends State<SignUpContent> {
     Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (_) => NameSetupPage(
+        builder: (_) => PhoneNumberRegisterPage(
           signUpData: signUpData,
         ),
       ),

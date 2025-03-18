@@ -50,14 +50,16 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  recepientName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
+                (recepientName == 'Loading...')
+                    ? CircularProgressIndicator()
+                    : Text(
+                        recepientName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
               ],
             )
           ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantocube/components/components.dart';
+import 'package:quantocube/page/Homeowner/project_page.dart';
 import 'package:quantocube/page/homeowner/find_pros.dart';
 import 'package:quantocube/tests/test_func.dart';
 import 'package:quantocube/utils/project_service.dart';
@@ -469,35 +470,35 @@ class HomeownerHomePage extends StatelessWidget {
     );
   }
 
-  void bottomNavigationRoute(int value, BuildContext context) {
-    switch (value) {
-      case 0:
-        Navigator.pushNamed(context, '/homeowner_homepage');
-        break;
-      case 1:
-        Navigator.pushNamed(context, '/messaging_list');
-        break;
-      case 2:
-        // TODO: Navigate to Shopping Bag Page
-        break;
-      case 3:
-        // TODO: Navigate to Profile Page
-        break;
-    }
-  }
-
-  Widget _buildBottomNavBar(BuildContext context) {
-    return BottomNavigationBar(
-      onTap: (value) => bottomNavigationRoute(value, context),
-      backgroundColor: Colors.black,
-      selectedItemColor: Theme.of(context).colorScheme.primary,
-      unselectedItemColor: Colors.white,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.message), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-      ],
-    );
-  }
+Widget _buildBottomNavBar(BuildContext context) {
+  return BottomNavigationBar(
+    backgroundColor: Colors.black,
+    selectedItemColor: Colors.orange,
+    unselectedItemColor: Colors.white,
+    onTap: (index) {
+      if (index == 0) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeownerHomePage()),
+          (route) => false, // Clears navigation stack
+        );
+      } else if (index == 1) {
+        Navigator.pushNamed(context, '/messages');
+      } else if (index == 2) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProjectPage()),
+        );
+      } else if (index == 3) {
+        Navigator.pushNamed(context, '/profile');
+      }
+    },
+    items: const [
+      BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.message), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+    ],
+  );
+}
 }

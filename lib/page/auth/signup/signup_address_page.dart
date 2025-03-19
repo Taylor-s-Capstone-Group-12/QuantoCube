@@ -140,7 +140,7 @@ class SignUpAddressContent extends StatefulWidget {
 class _SignUpAddressContentState extends State<SignUpAddressContent> {
   // hash map to store address data
   final Map<String, String> _addressData = {
-    'phoneNumber': '',
+    // 'phoneNumber': '',
     'houseNumber': '',
     'streetAddress': '',
     'city': '',
@@ -149,7 +149,7 @@ class _SignUpAddressContentState extends State<SignUpAddressContent> {
   };
 
   final Map<String, String> fieldTexts = {
-    'Phone Number': 'e.g. (0123456789)',
+    // 'Phone Number': 'e.g. (0123456789)',
     'Apartment/Suite/Unit': 'e.g. (A-1-1)',
     'Street Address': 'e.g. (Jalan SS 2/75)',
     'City': 'e.g. (Petaling Jaya)',
@@ -163,9 +163,13 @@ class _SignUpAddressContentState extends State<SignUpAddressContent> {
   /// Initialize the controllers based on the length of the [_addressData] keys
   /// Additionally, set the [_isValid] flag to false
   @override
+
   void initState() {
     // Create a controller for each field in the address data, and add a listener
     // to validate the form.
+
+
+
     for (int index = 0; index < _addressData.keys.length; index++) {
       final textController = TextEditingController();
       textController.addListener(formListener);
@@ -240,6 +244,8 @@ class _SignUpAddressContentState extends State<SignUpAddressContent> {
 
         // Ensure user is not null before storing in Firestore
         if (userCredential.user != null) {
+_addressData['phoneNumber'] = widget.signUpData['phone']!;
+
           await _firestore
               .collection("users")
               .doc(userCredential.user!.uid)

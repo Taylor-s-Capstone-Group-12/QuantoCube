@@ -94,3 +94,24 @@ Future<bool> getUserType(String uid) async {
     return false;
   }
 }
+
+Future<String> getHomeownerId(String projectId) async {
+  try {
+    DocumentSnapshot projectDoc = await FirebaseFirestore.instance
+        .collection('projects')
+        .doc(projectId)
+        .get();
+
+    if (projectDoc.exists) {
+      String homeownerId = projectDoc.get('homeownerId'); // Fetch the field
+      print('Homeowner ID: $homeownerId');
+      return homeownerId;
+    } else {
+      print('Project document not found');
+    }
+    return '';
+  } catch (e) {
+    print('Error fetching homeownerId: $e');
+    return '';
+  }
+}

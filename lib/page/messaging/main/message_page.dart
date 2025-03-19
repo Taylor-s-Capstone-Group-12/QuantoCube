@@ -33,7 +33,7 @@ class _MessagePageState extends State<MessagePage> {
   final FocusNode focusNode = FocusNode();
 
   late String userId;
-  late bool isHomeowner;
+  bool isHomeowner = true;
   String otherUserName = 'Loading...';
 
   late TextEditingController _controller;
@@ -215,6 +215,8 @@ class _MessagePageState extends State<MessagePage> {
         case 'Quotation':
           map['onTap'] = () {
             kPrint('Quotation tapped');
+            Navigator.pushNamed(context, '/message/quotation-review',
+                arguments: widget.projectId);
           };
         default:
           map['onTap'] = () {

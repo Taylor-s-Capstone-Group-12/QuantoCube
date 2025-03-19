@@ -46,32 +46,41 @@ class QuotedPage extends StatelessWidget {
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.monetization_on, color: Colors.yellow),
               SizedBox(width: 5),
               Text('Quoted',
-                  style: TextStyle(color: Colors.yellow, fontSize: 14, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      color: Colors.yellow,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold)),
               SizedBox(width: 5),
               Text('· Quotation Expired in 3 days',
                   style: TextStyle(color: Colors.orange, fontSize: 14)),
             ],
           ),
-          const SizedBox(height: 5),
-          const Text(
+          SizedBox(height: 5),
+          Text(
             'Project #9876',
-            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Row(
             children: [
-              const Text('Contractor ', style: TextStyle(color: Colors.grey, fontSize: 16)),
-              const Text('Jackson Hon', style: TextStyle(color: Colors.orange, fontSize: 16, fontWeight: FontWeight.bold)),
-              const Spacer(),
-              const Icon(Icons.arrow_forward_ios, color: Colors.orange, size: 16),
+              Text('Contractor ',
+                  style: TextStyle(color: Colors.grey, fontSize: 16)),
+              Text('Jackson Hon',
+                  style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
+              Spacer(),
+              Icon(Icons.arrow_forward_ios, color: Colors.orange, size: 16),
             ],
           ),
         ],
@@ -83,14 +92,18 @@ class QuotedPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildStatusItem('Service Requested', Icons.description, Colors.grey, isCompleted: true),
-        _buildStatusItem('Service Approved', Icons.description, Colors.grey, isCompleted: true),
-        _buildStatusItem('Quoted', Icons.monetization_on, Colors.yellow, isCompleted: false),
+        _buildStatusItem('Service Requested', Icons.description, Colors.grey,
+            isCompleted: true),
+        _buildStatusItem('Service Approved', Icons.description, Colors.grey,
+            isCompleted: true),
+        _buildStatusItem('Quoted', Icons.monetization_on, Colors.yellow,
+            isCompleted: false),
       ],
     );
   }
 
-  Widget _buildStatusItem(String title, IconData icon, Color color, {bool isCompleted = false}) {
+  Widget _buildStatusItem(String title, IconData icon, Color color,
+      {bool isCompleted = false}) {
     return Row(
       children: [
         CircleAvatar(
@@ -109,7 +122,8 @@ class QuotedPage extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const Text('22 Jun', style: TextStyle(color: Colors.grey, fontSize: 14)),
+            const Text('22 Jun',
+                style: TextStyle(color: Colors.grey, fontSize: 14)),
           ],
         ),
       ],
@@ -123,24 +137,32 @@ class QuotedPage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Service Request', style: TextStyle(color: Colors.white, fontSize: 16)),
+            const Text('Service Request',
+                style: TextStyle(color: Colors.white, fontSize: 16)),
             GestureDetector(
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const QuotationDetailsPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const QuotationDetailsPage()),
                 );
               },
-              child: const Text('Preview >', style: TextStyle(color: Colors.orange, fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text('Preview >',
+                  style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
             ),
           ],
         ),
         const SizedBox(height: 10),
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Request on', style: TextStyle(color: Colors.white, fontSize: 16)),
-            const Text('21/06/2024 21:38', style: TextStyle(color: Colors.grey, fontSize: 16)),
+            Text('Request on',
+                style: TextStyle(color: Colors.white, fontSize: 16)),
+            Text('21/06/2024 21:38',
+                style: TextStyle(color: Colors.grey, fontSize: 16)),
           ],
         ),
       ],
@@ -153,15 +175,21 @@ class QuotedPage extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.orange,
           padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const QuotationDetailsPage()),
+            MaterialPageRoute(
+                builder: (context) => const QuotationDetailsPage()),
           );
         },
-        child: const Text('View Quotation', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        child: const Text('View Quotation',
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold)),
       ),
     );
   }

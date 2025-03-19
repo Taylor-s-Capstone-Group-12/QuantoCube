@@ -52,16 +52,30 @@ class MessageList extends StatelessWidget {
           final adjustedIndex = isFirstTime == true ? index - 1 : index;
           final message = chatList[adjustedIndex];
 
-          DateTime messageDate = message['time'];
+          // Ensure timestamp conversion
+          DateTime messageDate = message['time'] is Timestamp
+              ? (message['time'] as Timestamp).toDate()
+              : message['time'];
+
           String formattedDate = DateFormat('MMMM d, yyyy').format(messageDate);
+
+          // ✅ Ensure chatList is sorted before checking previous messages
+          chatList.sort((a, b) {
+            DateTime timeA = a['time'] is Timestamp
+                ? (a['time'] as Timestamp).toDate()
+                : a['time'];
+            DateTime timeB = b['time'] is Timestamp
+                ? (b['time'] as Timestamp).toDate()
+                : b['time'];
+            return timeA.compareTo(timeB);
+          });
 
           bool showDateHeader = adjustedIndex == 0 ||
               DateFormat('yyyy-MM-dd').format(
-                    (chatList[adjustedIndex - 1]['time'] is Timestamp)
-                        ? (chatList[adjustedIndex - 1]['time'] as Timestamp)
-                            .toDate()
-                        : DateTime.now(), // Fallback for null timestamps
-                  ) !=
+                      chatList[adjustedIndex - 1]['time'] is Timestamp
+                          ? (chatList[adjustedIndex - 1]['time'] as Timestamp)
+                              .toDate()
+                          : chatList[adjustedIndex - 1]['time']) !=
                   DateFormat('yyyy-MM-dd').format(messageDate);
 
           return Column(
@@ -81,7 +95,7 @@ class MessageList extends StatelessWidget {
                     ),
                   ),
                 ),
-              _buildMessageItem(message, index),
+              _buildMessageItem(message, adjustedIndex),
             ],
           );
         },

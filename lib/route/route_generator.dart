@@ -12,6 +12,7 @@ import 'package:quantocube/page/auth/login_page.dart';
 import 'package:quantocube/data/contractor/contractor_data.dart';
 import 'package:quantocube/page/auth/signup/signup_page.dart';
 import 'package:quantocube/page/homeowner/listing/service_request_page.dart';
+import 'package:quantocube/page/messaging/attachment/quotation_review.dart';
 import 'package:quantocube/page/messaging/attachment/service_request_preview.dart';
 import 'package:quantocube/page/messaging/chat_list_page.dart';
 import 'package:quantocube/page/messaging/main/message_page.dart';
@@ -104,6 +105,13 @@ class RouteGenerator {
         if (args is String) {
           return CupertinoPageRoute(
               builder: (context) => ServiceRequestPreviewPage(projectId: args));
+        } else {
+          return _errorRoute();
+        }
+      case '/message/quotation':
+        if (args is String) {
+          return CupertinoPageRoute(
+              builder: (context) => QuotationReviewPage(projectId: args));
         } else {
           return _errorRoute();
         }

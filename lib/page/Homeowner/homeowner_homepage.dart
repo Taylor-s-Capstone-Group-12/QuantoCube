@@ -220,11 +220,22 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/project_overview');
-                  },
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.refresh, color: Colors.white),
+                      onPressed: () {
+                        setState(() {}); // Trigger rebuild to refresh data
+                      },
+                    ),
+                    IconButton(
+                      icon:
+                          const Icon(Icons.arrow_forward, color: Colors.white),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/project_overview');
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

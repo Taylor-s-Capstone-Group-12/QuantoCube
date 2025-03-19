@@ -215,7 +215,7 @@ class _MessagePageState extends State<MessagePage> {
         case 'Quotation':
           map['onTap'] = () {
             kPrint('Quotation tapped');
-            Navigator.pushNamed(context, '/message/quotation-review',
+            Navigator.pushNamed(context, '/message/quotation',
                 arguments: widget.projectId);
           };
         default:

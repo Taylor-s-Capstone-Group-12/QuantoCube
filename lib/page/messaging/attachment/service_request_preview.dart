@@ -147,7 +147,7 @@ class _ServiceRequestPreviewPageState extends State<ServiceRequestPreviewPage> {
         .doc('details')
         .update({'serviceStatus': 'decline'}).then((_) async {
       print('Service status updated successfully');
-
+      await changeStatus('serviceRejected');
       await addAnnoucement('Service request has been declined.');
 
       if (mounted) {
@@ -158,6 +158,15 @@ class _ServiceRequestPreviewPageState extends State<ServiceRequestPreviewPage> {
     });
   }
 
+  Future<void> changeStatus(String status) async {
+    await _firestore
+        .collection('projects')
+        .doc(widget.projectId)
+        .collection('data')
+        .doc('details')
+        .update({'status': status});
+  }
+
   void onAccept() {
     _firestore
         .collection('projects')
@@ -166,7 +175,7 @@ class _ServiceRequestPreviewPageState extends State<ServiceRequestPreviewPage> {
         .doc('details')
         .update({'serviceStatus': 'accepted'}).then((_) async {
       print('Service status updated successfully');
-
+      await changeStatus('serviceApproved');
       await addAnnoucement('Service request has been accepted.');
 
       if (mounted) {

@@ -102,6 +102,13 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
         // Update Firestore document
         await pendingQuotationRef.set(
             quotationDetails, SetOptions(merge: true));
+
+        await _firestore
+            .collection('projects')
+            .doc(widget.projectId)
+            .collection('data')
+            .doc('details')
+            .update({'status': 'quotation'});
       } catch (e) {
         _loadingOverlayKey.currentState?.hide();
         print("⚠ Error creating project: $e");

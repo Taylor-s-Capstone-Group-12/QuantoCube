@@ -18,6 +18,8 @@ class _NameSearchPageState extends State<NameSearchPage> {
   double _distanceMin = 0;
   double _distanceMax = 50;
 
+  List<bool> _selectedRatings = List.generate(5, (index) => false);
+
   @override
   void initState() {
     super.initState();
@@ -87,7 +89,7 @@ class _NameSearchPageState extends State<NameSearchPage> {
         for (var doc in docs) {
           final data = doc.data();
           if (data == null || data['isHomeowner'] == true) {
-            continue; // ✅ Ensure contractors only
+            continue; // ✅ Ensure only contractors
           }
 
           try {
@@ -107,16 +109,65 @@ class _NameSearchPageState extends State<NameSearchPage> {
             if (actualDistance >= _distanceMin &&
                 actualDistance <= _distanceMax) {
               print(
-                "✅ Contractor in range (${actualDistance.toStringAsFixed(2)} km): $username",
-              );
+                  "✅ Contractor in range (${actualDistance.toStringAsFixed(2)} km): $username");
 
-              tempContractors.add({
-                'uuid': doc.id,
-                'name': username,
-                'imageUrl': data['profileImage'] ?? '',
-                'rating': data['rating'] ?? 4.6,
-                'distance': actualDistance,
-              });
+              // ✅ Calculate rating
+              final Map<String, dynamic>? ratingsMap = data['ratings'];
+              double avgRating = 0.0;
+              int totalRatings = 0;
+
+              if (ratingsMap != null) {
+                double totalRating = 0;
+                ratingsMap.forEach((key, value) {
+                  int ratingValue = int.tryParse(key) ?? 0;
+                  int count = value as int;
+
+                  totalRating += ratingValue * count;
+                  totalRatings += count;
+                });
+
+                avgRating = totalRatings > 0 ? totalRating / totalRatings : 0.0;
+              }
+
+              // 🔹 Debugging: Print rating comparison for each contractor
+              // 🔹 Debugging: Print rating comparison for each contractor
+              print("🔍 Checking rating for $username:");
+              print("   - avgRating: ${avgRating.toStringAsFixed(2)}");
+              print("   - Total Ratings: $totalRatings");
+              print("   - _selectedRatings: $_selectedRatings");
+              if (_selectedRatings.every((element) => element == false)) {
+                print("🔹 No rating filter selected, enabling all ratings.");
+                _selectedRatings = List.generate(5, (_) => true);
+              }
+
+              // ✅ Apply rating filter (each star level includes up to the next full number)
+              bool isInSelectedRange = false;
+              for (int i = 0; i < _selectedRatings.length; i++) {
+                if (_selectedRatings[i]) {
+                  double minRating = (i == 0) ? 0.0 : i.toDouble();
+                  double maxRating = (i + 1).toDouble();
+
+                  if (avgRating >= minRating && avgRating < maxRating) {
+                    print(
+                        "   ✅ Rating ${avgRating.toStringAsFixed(2)} falls in [$minRating, $maxRating), adding $username.");
+                    isInSelectedRange = true;
+                    break; // ✅ Stop checking once matched
+                  }
+                }
+              }
+
+              if (isInSelectedRange) {
+                tempContractors.add({
+                  'uuid': doc.id,
+                  'name': username,
+                  'imageUrl': data['profileImage'] ?? '',
+                  'rating': avgRating,
+                  'totalRatings': totalRatings,
+                  'distance': actualDistance,
+                });
+              } else {
+                print("   ❌ Skipping $username due to rating filter.");
+              }
             } else {
               if (actualDistance < _distanceMin) {
                 print(
@@ -133,9 +184,10 @@ class _NameSearchPageState extends State<NameSearchPage> {
           }
         }
 
-        // Sort the contractors list by distance (nearest first)
+        // Sort contractors by distance (nearest first)
         tempContractors.sort((a, b) => a['distance'].compareTo(b['distance']));
         _contractors = tempContractors;
+        _filteredContractors = _contractors; // ✅ Sync with filtered list
 
         print(
             "🔎 Debug: $filteredOutMin too close, $filteredOutMax too far out of $totalCount contractors");
@@ -161,12 +213,19 @@ class _NameSearchPageState extends State<NameSearchPage> {
     return degrees * (pi / 180);
   }
 
-  void _onSearchChanged(String value) {
+// 🔍 Instant search filtering (no refetch needed)
+  void _applySearchFilter() {
     setState(() {
-      _searchTerm = value.toLowerCase();
       _filteredContractors = _contractors.where((contractor) {
         return contractor['name'].toLowerCase().contains(_searchTerm);
       }).toList();
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      _searchTerm = value.toLowerCase();
+      _applySearchFilter(); // ✅ Apply search + rating filters together
     });
   }
 
@@ -207,7 +266,7 @@ class _NameSearchPageState extends State<NameSearchPage> {
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _fetchContractors(); // ✅ Refetch contractors with new filters
+                        _fetchContractors();
                       });
                       Navigator.pop(context);
                     },
@@ -291,8 +350,6 @@ class _NameSearchPageState extends State<NameSearchPage> {
   }
 
   Widget _buildRatingCheckboxes() {
-    List<bool> _selectedRatings = List.generate(5, (index) => false);
-
     return StatefulBuilder(
       builder: (context, setState) {
         return Column(
@@ -346,7 +403,7 @@ class _NameSearchPageState extends State<NameSearchPage> {
                       hintText: 'Search...',
                       prefixIcon: Icon(Icons.search),
                       filled: true,
-                      fillColor: Colors.grey[900],
+                      fillColor: const Color.fromRGBO(28, 28, 28, 1),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
@@ -372,7 +429,10 @@ class _NameSearchPageState extends State<NameSearchPage> {
                   name: contractor['name'],
                   imageUrl: contractor['imageUrl'],
                   distance: contractor['distance'],
-                  rating: contractor['rating'],
+                  rating:
+                      contractor['rating'], // ✅ Pass calculated average rating
+                  totalRatings: contractor[
+                      'totalRatings'], // ✅ Pass total number of ratings
                   category: 'Renovation',
                   onTap: () {
                     Navigator.pushNamed(
@@ -396,6 +456,7 @@ class ContractorCard extends StatelessWidget {
   final String imageUrl;
   final double distance;
   final double rating;
+  final int totalRatings;
   final String category;
   final VoidCallback onTap;
 
@@ -404,6 +465,7 @@ class ContractorCard extends StatelessWidget {
     required this.imageUrl,
     required this.distance,
     required this.rating,
+    required this.totalRatings,
     required this.category,
     required this.onTap,
     Key? key,
@@ -417,7 +479,7 @@ class ContractorCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.black,
+          color: Color.fromARGB(255, 28, 28, 28),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -445,10 +507,12 @@ class ContractorCard extends StatelessWidget {
                       Text('${distance.toStringAsFixed(1)} km',
                           style: TextStyle(color: Colors.grey, fontSize: 14)),
                       SizedBox(width: 8),
-                      Icon(Icons.star, color: Colors.yellow, size: 16),
+                      _buildStarRating(rating), // ✅ Rating stars
                       SizedBox(width: 4),
-                      Text(rating.toStringAsFixed(1),
-                          style: TextStyle(color: Colors.white, fontSize: 14)),
+                      Text(
+                        "${rating.toStringAsFixed(1)} (${totalRatings})", // ✅ Format as "x.x(x)"
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
                     ],
                   ),
                 ],
@@ -458,5 +522,27 @@ class ContractorCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildStarRating(double averageRating) {
+    List<Widget> stars = [];
+
+    // Full stars
+    stars.addAll(List.generate(
+      averageRating.floor(),
+      (index) => Icon(Icons.star, color: Colors.yellow, size: 16),
+    ));
+
+    // Half-star if needed
+    if (averageRating - averageRating.floor() >= 0.5) {
+      stars.add(Icon(Icons.star_half, color: Colors.yellow, size: 16));
+    }
+
+    // Ensure 5-star layout by adding empty stars
+    while (stars.length < 5) {
+      stars.add(Icon(Icons.star_border, color: Colors.yellow, size: 16));
+    }
+
+    return Row(children: stars);
   }
 }

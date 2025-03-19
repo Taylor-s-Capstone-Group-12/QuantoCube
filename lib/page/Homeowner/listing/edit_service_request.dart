@@ -32,12 +32,15 @@ class _EditServiceRequestPageState extends State<EditServiceRequestPage> {
     'startDate': '',
     'endDate': '',
     'additionalComment': '',
+    'projectName': '',
   };
 
   final GlobalKey<LoadingOverlayState> _loadingOverlayKey =
       GlobalKey<LoadingOverlayState>();
 
   bool isValid = false;
+
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -46,6 +49,8 @@ class _EditServiceRequestPageState extends State<EditServiceRequestPage> {
   }
 
   Future<void> getServiceDetails() async {
+    print('DEBUG: Getting service details');
+
     await _firestore
         .collection('projects')
         .doc(widget.projectID)
@@ -54,19 +59,31 @@ class _EditServiceRequestPageState extends State<EditServiceRequestPage> {
         .get()
         .then((DocumentSnapshot documentSnapshot) {
       if (documentSnapshot.exists) {
+        print('Document does exist.');
+
+        var data = documentSnapshot.data();
+        if (data is Map<String, dynamic>) {
+          for (var key in data.keys) {
+            var value = data[key];
+            print('Key: $key, Value: $value, Type: ${value.runtimeType}');
+          }
+        } else {
+          print("Document data is null or not a valid map");
+        }
+
+        serviceRequest['service'] = documentSnapshot['serviceType'];
+        serviceRequest['projectName'] = documentSnapshot['name'];
+        serviceRequest['details'] = documentSnapshot['serviceDetail'];
+        serviceRequest['location'] = documentSnapshot['location'];
+        serviceRequest['startDate'] =
+            (documentSnapshot['startDate'] as Timestamp).toDate().toString();
+        serviceRequest['endDate'] =
+            (documentSnapshot['endDate'] as Timestamp).toDate().toString();
+        serviceRequest['minBudget'] = documentSnapshot['budgetMin'].toString();
+        serviceRequest['maxBudget'] = documentSnapshot['budgetMax'].toString();
+        serviceRequest['additionalComment'] = documentSnapshot['comments'];
         setState(() {
-          serviceRequest['service'] = documentSnapshot['serviceType'];
-          serviceRequest['details'] = documentSnapshot['serviceDetail'];
-          serviceRequest['location'] = documentSnapshot['location'];
-          serviceRequest['startDate'] =
-              (documentSnapshot['startDate'] as Timestamp).toDate().toString();
-          serviceRequest['endDate'] =
-              (documentSnapshot['endDate'] as Timestamp).toDate().toString();
-          serviceRequest['minBudget'] =
-              documentSnapshot['budgetMin'].toString();
-          serviceRequest['maxBudget'] =
-              documentSnapshot['budgetMax'].toString();
-          serviceRequest['additionalComment'] = documentSnapshot['comments'];
+          isLoading = false;
         });
       }
     });
@@ -150,36 +167,41 @@ class _EditServiceRequestPageState extends State<EditServiceRequestPage> {
   Widget build(BuildContext context) {
     return LoadingOverlay(
       key: _loadingOverlayKey,
-      child: Scaffold(
-        body: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const TitleBar(),
-              ServiceRequestBody(
-                serviceRequest: serviceRequest,
-                updateMap: updateMap,
+      child: isLoading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const TitleBar(),
+                    ServiceRequestBody(
+                      serviceRequest: serviceRequest,
+                      updateMap: updateMap,
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-        floatingActionButton: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: Stack(children: [
-            Container(
-              height: 70,
-              width: MediaQuery.of(context).size.width,
-              color: Colors.grey[900],
+              floatingActionButton: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30),
+                child: Stack(children: [
+                  Container(
+                    height: 70,
+                    width: MediaQuery.of(context).size.width,
+                    color: Colors.grey[900],
+                  ),
+                  LargeOrangeButton.onlyText(
+                    context,
+                    onPressed: isValid ? onContinue : null,
+                    text: 'Send Request',
+                  ),
+                ]),
+              ),
+              floatingActionButtonLocation:
+                  FloatingActionButtonLocation.centerFloat,
             ),
-            LargeOrangeButton.onlyText(
-              context,
-              onPressed: isValid ? onContinue : null,
-              text: 'Send Request',
-            ),
-          ]),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      ),
     );
   }
 }
@@ -240,49 +262,9 @@ class ServiceRequestBody extends StatefulWidget {
 }
 
 class _ServiceRequestBodyState extends State<ServiceRequestBody> {
-  late TextEditingController projectNameController;
-  late TextEditingController serviceDetailsController;
-  late TextEditingController locationController;
-  late TextEditingController additionalCommentsController;
-
   @override
   void initState() {
-    projectNameController =
-        TextEditingController(text: widget.serviceRequest['projectName']);
-    serviceDetailsController =
-        TextEditingController(text: widget.serviceRequest['details']);
-    locationController =
-        TextEditingController(text: widget.serviceRequest['location']);
-    additionalCommentsController =
-        TextEditingController(text: widget.serviceRequest['additionalComment']);
-
-    projectNameController.addListener(() {
-      widget.serviceRequest['projectName'] = projectNameController.text;
-      widget.updateMap(widget.serviceRequest);
-    });
-    serviceDetailsController.addListener(() {
-      widget.serviceRequest['details'] = serviceDetailsController.text;
-      widget.updateMap(widget.serviceRequest);
-    });
-    locationController.addListener(() {
-      widget.serviceRequest['location'] = locationController.text;
-      widget.updateMap(widget.serviceRequest);
-    });
-    additionalCommentsController.addListener(() {
-      widget.serviceRequest['additionalComment'] =
-          additionalCommentsController.text;
-      widget.updateMap(widget.serviceRequest);
-    });
-
     super.initState();
-  }
-
-  void updateControllerValues() {
-    projectNameController.text = widget.serviceRequest['projectName']!;
-    serviceDetailsController.text = widget.serviceRequest['details']!;
-    locationController.text = widget.serviceRequest['location']!;
-    additionalCommentsController.text =
-        widget.serviceRequest['additionalComment']!;
   }
 
   void onServiceSelect(String service) {
@@ -314,31 +296,47 @@ class _ServiceRequestBodyState extends State<ServiceRequestBody> {
         children: [
           const TitleSection(title: 'Project Name', isRequired: true),
           TextInputBox(
-            controller: projectNameController,
+            initialValue: widget.serviceRequest['projectName'],
+            onChanged: (value) {
+              widget.serviceRequest['projectName'] = value;
+              widget.updateMap(widget.serviceRequest);
+            },
             maxLines: 1,
             hintText: 'Enter project name',
           ),
           const Separator(),
           const TitleSection(title: 'Select Service', isRequired: true),
           ServiceSelectionMenu(
+            initialSelection: widget.serviceRequest['service']!,
             onSelected: onServiceSelect,
           ),
           const Separator(),
           const TitleSection(title: 'Service Details', isRequired: true),
           TextInputBox(
-            controller: serviceDetailsController,
+            initialValue: widget.serviceRequest['details'],
             hintText: 'Tell us more about your project',
+            onChanged: (value) {
+              widget.serviceRequest['details'] = value;
+              widget.updateMap(widget.serviceRequest);
+            },
           ),
           const Separator(),
           const TitleSection(title: 'Location', isRequired: true),
           TextInputBox(
-            controller: locationController,
+            initialValue: widget.serviceRequest['location'],
+            onChanged: (value) {
+              widget.serviceRequest['location'] = value;
+              widget.updateMap(widget.serviceRequest);
+            },
             hintText: 'Where is your project located?',
             maxLines: 1,
           ),
           const Separator(),
           const TitleSection(title: 'Timeline', isRequired: true),
           DateRangePicker(
+            initialEndDate: DateTime.parse(widget.serviceRequest['endDate']!),
+            initialStartDate:
+                DateTime.parse(widget.serviceRequest['startDate']!),
             setStartDate: (value) {
               widget.serviceRequest['startDate'] = value.toString();
               widget.updateMap(widget.serviceRequest);
@@ -351,6 +349,8 @@ class _ServiceRequestBodyState extends State<ServiceRequestBody> {
           const Separator(),
           const TitleSection(title: 'Budget', isRequired: true),
           BudgetPicker(
+            minBudget: widget.serviceRequest['minBudget']!,
+            maxBudget: widget.serviceRequest['maxBudget']!,
             changeMinBudget: (value) {
               widget.serviceRequest['minBudget'] = value;
               widget.updateMap(widget.serviceRequest);
@@ -363,7 +363,11 @@ class _ServiceRequestBodyState extends State<ServiceRequestBody> {
           const Separator(),
           const TitleSection(title: 'Additional Comments', isRequired: false),
           TextInputBox(
-            controller: additionalCommentsController,
+            initialValue: widget.serviceRequest['additionalComment'],
+            onChanged: (value) {
+              widget.serviceRequest['additionalComment'] = value;
+              widget.updateMap(widget.serviceRequest);
+            },
             hintText: 'Anything else you\'d like us to know?',
           ),
         ],
@@ -428,15 +432,18 @@ class ServiceSelectionMenu extends StatelessWidget {
   ServiceSelectionMenu({
     super.key,
     required this.onSelected,
+    required this.initialSelection,
   });
 
   void Function(String) onSelected;
+  final String initialSelection;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.9, // 90% of screen width
       child: DropdownMenu<String>(
+        initialSelection: initialSelection,
         hintText: 'Select Service',
         inputDecorationTheme: ProjectTheme.inputDecorationTheme(context),
         onSelected: (value) {
@@ -476,13 +483,13 @@ class ServiceSelectionMenu extends StatelessWidget {
 class TextInputBox extends StatelessWidget {
   const TextInputBox({
     super.key,
-    required this.controller,
+    required this.onChanged,
     required this.hintText,
     this.maxLines = 5,
     this.initialValue,
   });
 
-  final TextEditingController controller;
+  final void Function(String) onChanged;
   final String hintText;
   final int maxLines;
   final String? initialValue;
@@ -492,7 +499,7 @@ class TextInputBox extends StatelessWidget {
     return TextFormField(
       initialValue: initialValue,
       maxLines: maxLines,
-      controller: controller,
+      onChanged: onChanged,
       style: const TextStyle(
         color: Colors.white,
         fontSize: 15,
@@ -509,35 +516,39 @@ class DateRangePicker extends StatefulWidget {
     super.key,
     required this.setStartDate,
     required this.setEndDate,
+    required this.initialStartDate,
+    required this.initialEndDate,
   });
 
   final void Function(DateTime) setStartDate;
   final void Function(DateTime) setEndDate;
+
+  final DateTime initialStartDate;
+  final DateTime initialEndDate;
 
   @override
   _DateRangePickerState createState() => _DateRangePickerState();
 }
 
 class _DateRangePickerState extends State<DateRangePicker> {
-  DateTime? startDate;
-  DateTime? endDate;
+  late DateTime startDate;
+  late DateTime endDate;
 
-  setDate() {
-    if (startDate != null) widget.setStartDate(startDate!);
-    if (endDate != null) widget.setEndDate(endDate!);
+  @override
+  void initState() {
+    super.initState();
+    startDate = widget.initialStartDate;
+    endDate = widget.initialEndDate;
+  }
+
+  void setDate() {
+    widget.setStartDate(startDate);
+    widget.setEndDate(endDate);
   }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    DateTime initialDate = isStartDate
-        ? (startDate ?? DateTime.now()) // Use today if startDate is null
-        : (endDate ??
-            startDate ??
-            DateTime.now()); // If endDate is null, use startDate or today
-
-    DateTime firstDate = isStartDate
-        ? DateTime(2000) // No restriction for start date
-        : (startDate ?? DateTime(2000)); // If startDate is null, allow any date
-
+    DateTime initialDate = isStartDate ? startDate : endDate;
+    DateTime firstDate = isStartDate ? DateTime(2000) : startDate;
     DateTime lastDate = DateTime(2100);
 
     final DateTime? picked = await showDatePicker(
@@ -551,15 +562,15 @@ class _DateRangePickerState extends State<DateRangePicker> {
       setState(() {
         if (isStartDate) {
           startDate = picked;
-          if (endDate != null && endDate!.isBefore(startDate!)) {
-            endDate = null; // Reset end date if it's before start date
+          if (endDate.isBefore(startDate)) {
+            endDate = picked;
           }
         } else {
           endDate = picked;
         }
       });
+      setDate();
     }
-    setDate();
   }
 
   @override
@@ -590,16 +601,17 @@ class _DateRangePickerState extends State<DateRangePicker> {
   }
 
   Widget _buildDateCard(BuildContext context,
-      {required String title, DateTime? date, required VoidCallback onTap}) {
+      {required String title,
+      required DateTime date,
+      required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 75,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black, // Background color
+          color: Colors.black,
           borderRadius: BorderRadius.circular(12),
-          //border: Border.all(color: Colors.grey[700]!,), // Border color
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,12 +628,8 @@ class _DateRangePickerState extends State<DateRangePicker> {
                     color: Theme.of(context).colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  date != null
-                      ? DateFormat("d MMM").format(date)
-                      : "Select Date",
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: date != null ? Colors.white : Colors.grey),
+                  DateFormat("d MMM").format(date),
+                  style: const TextStyle(fontSize: 14, color: Colors.white),
                 ),
               ],
             ),
@@ -633,21 +641,34 @@ class _DateRangePickerState extends State<DateRangePicker> {
 }
 
 class BudgetPicker extends StatefulWidget {
-  const BudgetPicker(
-      {super.key,
-      required this.changeMinBudget,
-      required this.changeMaxBudget});
+  const BudgetPicker({
+    super.key,
+    required this.changeMinBudget,
+    required this.changeMaxBudget,
+    required this.minBudget,
+    required this.maxBudget,
+  });
 
   final void Function(String) changeMinBudget;
   final void Function(String) changeMaxBudget;
+
+  final String minBudget;
+  final String maxBudget;
 
   @override
   _BudgetPickerState createState() => _BudgetPickerState();
 }
 
 class _BudgetPickerState extends State<BudgetPicker> {
-  final TextEditingController minBudgetController = TextEditingController();
-  final TextEditingController maxBudgetController = TextEditingController();
+  late TextEditingController minBudgetController;
+  late TextEditingController maxBudgetController;
+
+  @override
+  void initState() {
+    super.initState();
+    minBudgetController = TextEditingController(text: widget.minBudget);
+    maxBudgetController = TextEditingController(text: widget.maxBudget);
+  }
 
   @override
   void dispose() {
@@ -681,15 +702,16 @@ class _BudgetPickerState extends State<BudgetPicker> {
     );
   }
 
-  Widget _buildBudgetField(
-      {required TextEditingController controller,
-      required String label,
-      required void Function(String) onChange}) {
+  Widget _buildBudgetField({
+    required TextEditingController controller,
+    required String label,
+    required void Function(String) onChange,
+  }) {
     return TextFormField(
       controller: controller,
       textInputAction: TextInputAction.done,
       onChanged: onChange,
-      keyboardType: TextInputType.number, // Numeric keyboard
+      keyboardType: TextInputType.number,
       decoration: ProjectTheme.inputDecoration(context).copyWith(
         hintText: label,
       ),

@@ -295,11 +295,9 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
         isOtpValid = false;
       });
     }
-  }
 
-  // Function to proceed after OTP verification
-  void onContinue() {
     if (isOtpValid) {
+      print('valid');
       // Store verified phone number
       widget.signUpData['phone'] = phoneController.text;
       Navigator.push(
@@ -310,6 +308,27 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
           ),
         ),
       );
+    } else {
+      print('notvalid');
+    }
+  }
+
+  // Function to proceed after OTP verification
+  void onContinue() {
+    if (isOtpValid) {
+      print('valid');
+      // Store verified phone number
+      widget.signUpData['phone'] = phoneController.text;
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (_) => NameSetupPage(
+            signUpData: widget.signUpData,
+          ),
+        ),
+      );
+    } else {
+      print('notvalid');
     }
   }
 

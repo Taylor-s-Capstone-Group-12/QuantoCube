@@ -291,7 +291,7 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(status,
+                Text(camelToThisCase(status),
                     style: TextStyle(color: Colors.grey[400], fontSize: 14)),
                 Text("${formatDate(createdAt)} • $otherUserName",
                     style: TextStyle(color: Colors.grey[500], fontSize: 12)),
@@ -309,6 +309,14 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
         ],
       ),
     );
+  }
+
+  String camelToThisCase(String input) {
+    return input.replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (match) {
+      return '${match.group(1)} ${match.group(2)}';
+    }).replaceFirstMapped(RegExp(r'^\w'), (match) {
+      return match.group(0)!.toUpperCase();
+    });
   }
 
   Widget _buildFeaturedContractors() {

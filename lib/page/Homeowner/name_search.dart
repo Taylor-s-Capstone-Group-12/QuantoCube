@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
 
 class NameSearchPage extends StatefulWidget {
   @override
@@ -9,21 +10,20 @@ class NameSearchPage extends StatefulWidget {
 }
 
 class _NameSearchPageState extends State<NameSearchPage> {
-  final ScrollController _scrollController = ScrollController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  List<Map<String, dynamic>> _contractors = []; // Store with distance
-  bool _isLoading = false;
-  bool _hasMore = true;
+  List<Map<String, dynamic>> _contractors = [];
+  List<Map<String, dynamic>> _filteredContractors = [];
   String _searchTerm = '';
-  DocumentSnapshot? _lastDocument;
-  GeoPoint? _currentUserLocation; // Store user's GeoPoint
+  GeoPoint? _currentUserLocation;
+  double _distanceMin = 0;
+  double _distanceMax = 50;
+
+  List<bool> _selectedRatings = List.generate(5, (index) => false);
 
   @override
   void initState() {
     super.initState();
     _fetchUserLocation();
-    _scrollController.addListener(_scrollListener);
   }
 
   Future<void> _fetchUserLocation() async {
@@ -41,68 +41,157 @@ class _NameSearchPageState extends State<NameSearchPage> {
     }
   }
 
-  Future<void> _fetchContractors({bool isNewSearch = false}) async {
-    if (_isLoading || !_hasMore || _currentUserLocation == null) return;
-    setState(() => _isLoading = true);
-
-    Query query = _firestore
-        .collection('users')
-        .where('isHomeowner', isEqualTo: false)
-        .orderBy('name')
-        .limit(10);
-
-    if (_lastDocument != null && !isNewSearch) {
-      query = query.startAfterDocument(_lastDocument!);
+  Future<void> _fetchContractors() async {
+    if (_currentUserLocation == null) {
+      print("⚠ _fetchContractors called but _currentUserLocation is null!");
+      return;
     }
 
-    QuerySnapshot snapshot = await query.get();
-    List<DocumentSnapshot> newDocs = snapshot.docs;
+    print(
+        "🔍 Searching contractors between ${_distanceMin.toInt()} km and ${_distanceMax.toInt()} km");
 
-    if (isNewSearch) {
-      _contractors.clear();
-      _lastDocument = null;
-      _hasMore = true;
-    }
-
-    if (newDocs.isNotEmpty) {
-      _lastDocument = newDocs.last;
-    } else {
-      _hasMore = false;
-    }
-
-    List<Map<String, dynamic>> tempContractors = [];
-
-    for (var doc in newDocs) {
-      final data = doc.data() as Map<String, dynamic>?;
-
-      if (data == null ||
-          data['geo'] == null ||
-          data['geo']['geopoint'] == null) {
-        continue;
-      }
-
-      GeoPoint contractorLocation = data['geo']['geopoint'];
-      double distance = _calculateDistance(
+    final collectionReference = FirebaseFirestore.instance.collection('users');
+    final GeoFirePoint center = GeoFirePoint(
+      GeoPoint(
         _currentUserLocation!.latitude,
         _currentUserLocation!.longitude,
-        contractorLocation.latitude,
-        contractorLocation.longitude,
-      );
+      ),
+    );
 
-      tempContractors.add({
-        'uuid': doc.id,
-        'name': data['name'] ?? 'Unknown',
-        'imageUrl': data['profileImage'] ?? '', // Contractor profile image
-        'rating': data['rating'] ?? 4.6, // Default rating if missing
-        'distance': distance, // Calculated distance
-      });
+    GeoPoint geopointFrom(Map<String, dynamic> data) {
+      if (data.containsKey('geo') &&
+          data['geo'] is Map<String, dynamic> &&
+          data['geo'].containsKey('geopoint')) {
+        return data['geo']['geopoint'] as GeoPoint;
+      }
+      throw Exception(
+          "❌ Invalid location data for ${data['name'] ?? 'Unknown'}");
     }
 
-    tempContractors.sort((a, b) => a['distance'].compareTo(b['distance']));
+    final Stream<List<DocumentSnapshot<Map<String, dynamic>>>> stream =
+        GeoCollectionReference<Map<String, dynamic>>(collectionReference)
+            .subscribeWithin(
+      center: center,
+      radiusInKm: _distanceMax / 2.506, // ✅ Correction factor applied
+      field: 'geo',
+      geopointFrom: geopointFrom,
+    );
 
-    setState(() {
-      _contractors.addAll(tempContractors);
-      _isLoading = false;
+    stream.listen((docs) {
+      print("📌 Found ${docs.length} contractors before filtering");
+      int filteredOutMin = 0;
+      int filteredOutMax = 0;
+      int totalCount = docs.length;
+
+      final List<Map<String, dynamic>> tempContractors = [];
+
+      setState(() {
+        for (var doc in docs) {
+          final data = doc.data();
+          if (data == null || data['isHomeowner'] == true) {
+            continue; // ✅ Ensure only contractors
+          }
+
+          try {
+            final GeoPoint geopoint = geopointFrom(data);
+            final double lat = geopoint.latitude;
+            final double lon = geopoint.longitude;
+            final String username = data['name'] ?? 'Unknown';
+
+            // ✅ Apply manual distance filtering
+            final double actualDistance = _calculateDistance(
+              _currentUserLocation!.latitude,
+              _currentUserLocation!.longitude,
+              lat,
+              lon,
+            );
+
+            if (actualDistance >= _distanceMin &&
+                actualDistance <= _distanceMax) {
+              print(
+                  "✅ Contractor in range (${actualDistance.toStringAsFixed(2)} km): $username");
+
+              // ✅ Calculate rating
+              final Map<String, dynamic>? ratingsMap = data['ratings'];
+              double avgRating = 0.0;
+              int totalRatings = 0;
+
+              if (ratingsMap != null) {
+                double totalRating = 0;
+                ratingsMap.forEach((key, value) {
+                  int ratingValue = int.tryParse(key) ?? 0;
+                  int count = value as int;
+
+                  totalRating += ratingValue * count;
+                  totalRatings += count;
+                });
+
+                avgRating = totalRatings > 0 ? totalRating / totalRatings : 0.0;
+              }
+
+              // 🔹 Debugging: Print rating comparison for each contractor
+              // 🔹 Debugging: Print rating comparison for each contractor
+              print("🔍 Checking rating for $username:");
+              print("   - avgRating: ${avgRating.toStringAsFixed(2)}");
+              print("   - Total Ratings: $totalRatings");
+              print("   - _selectedRatings: $_selectedRatings");
+              if (_selectedRatings.every((element) => element == false)) {
+                print("🔹 No rating filter selected, enabling all ratings.");
+                _selectedRatings = List.generate(5, (_) => true);
+              }
+
+              // ✅ Apply rating filter (each star level includes up to the next full number)
+              bool isInSelectedRange = false;
+              for (int i = 0; i < _selectedRatings.length; i++) {
+                if (_selectedRatings[i]) {
+                  double minRating = (i == 0) ? 0.0 : i.toDouble();
+                  double maxRating = (i + 1).toDouble();
+
+                  if (avgRating >= minRating && avgRating < maxRating) {
+                    print(
+                        "   ✅ Rating ${avgRating.toStringAsFixed(2)} falls in [$minRating, $maxRating), adding $username.");
+                    isInSelectedRange = true;
+                    break; // ✅ Stop checking once matched
+                  }
+                }
+              }
+
+              if (isInSelectedRange) {
+                tempContractors.add({
+                  'uuid': doc.id,
+                  'name': username,
+                  'imageUrl': data['profileImage'] ?? '',
+                  'rating': avgRating,
+                  'totalRatings': totalRatings,
+                  'distance': actualDistance,
+                });
+              } else {
+                print("   ❌ Skipping $username due to rating filter.");
+              }
+            } else {
+              if (actualDistance < _distanceMin) {
+                print(
+                    "❌ Contractor too close (${actualDistance.toStringAsFixed(2)} km): $username");
+                filteredOutMin++;
+              } else {
+                print(
+                    "❌ Contractor too far (${actualDistance.toStringAsFixed(2)} km): $username");
+                filteredOutMax++;
+              }
+            }
+          } catch (e) {
+            print("⚠ Error processing contractor ${doc.id}: $e");
+          }
+        }
+
+        // Sort contractors by distance (nearest first)
+        tempContractors.sort((a, b) => a['distance'].compareTo(b['distance']));
+        _contractors = tempContractors;
+        _filteredContractors = _contractors; // ✅ Sync with filtered list
+
+        print(
+            "🔎 Debug: $filteredOutMin too close, $filteredOutMax too far out of $totalCount contractors");
+      });
     });
   }
 
@@ -124,24 +213,20 @@ class _NameSearchPageState extends State<NameSearchPage> {
     return degrees * (pi / 180);
   }
 
-  void _scrollListener() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      _fetchContractors();
-    }
+// 🔍 Instant search filtering (no refetch needed)
+  void _applySearchFilter() {
+    setState(() {
+      _filteredContractors = _contractors.where((contractor) {
+        return contractor['name'].toLowerCase().contains(_searchTerm);
+      }).toList();
+    });
   }
 
   void _onSearchChanged(String value) {
     setState(() {
       _searchTerm = value.toLowerCase();
+      _applySearchFilter(); // ✅ Apply search + rating filters together
     });
-    _fetchContractors(isNewSearch: true);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   void _showFilterMenu() {
@@ -174,11 +259,17 @@ class _NameSearchPageState extends State<NameSearchPage> {
                       ),
                     ],
                   ),
-                  _buildExpandableSection('Distance', _buildDistanceSlider()),
+                  _buildExpandableSection(
+                      'Distance', _buildDistanceSlider(setModalState)),
                   _buildExpandableSection('Rating', _buildRatingCheckboxes()),
                   SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      setState(() {
+                        _fetchContractors();
+                      });
+                      Navigator.pop(context);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                       shape: RoundedRectangleBorder(
@@ -213,48 +304,52 @@ class _NameSearchPageState extends State<NameSearchPage> {
     );
   }
 
-  Widget _buildDistanceSlider() {
-    RangeValues _distanceRange = RangeValues(10, 300);
+  Widget _buildDistanceSlider(Function setModalState) {
+    double sliderMin = 0;
+    double sliderMax = 50;
+    int sliderSteps = (sliderMax - sliderMin).toInt();
 
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Column(
+    return Column(
+      children: [
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: Colors.orange,
+            thumbColor: Colors.orange,
+            overlayColor: Colors.orange.withOpacity(0.2),
+            valueIndicatorColor: Colors.orange,
+            showValueIndicator: ShowValueIndicator.always, // Always show bubble
+          ),
+          child: RangeSlider(
+            values: RangeValues(_distanceMin, _distanceMax),
+            min: sliderMin,
+            max: sliderMax,
+            divisions: sliderSteps, // 1 KM steps
+            labels: RangeLabels(
+              '${_distanceMin.toInt()} KM',
+              '${_distanceMax.toInt()} KM',
+            ),
+            onChanged: (values) {
+              setModalState(() {
+                _distanceMin = values.start;
+                _distanceMax = values.end;
+              });
+            },
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: Colors.orange,
-                thumbColor: Colors.orange,
-                overlayColor: Colors.orange.withOpacity(0.2),
-              ),
-              child: RangeSlider(
-                values: _distanceRange,
-                min: 10,
-                max: 300,
-                onChanged: (values) {
-                  setState(() {
-                    _distanceRange = values;
-                  });
-                },
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('${_distanceRange.start.toInt()} KM',
-                    style: TextStyle(color: Colors.white)),
-                Text('${_distanceRange.end.toInt()} KM',
-                    style: TextStyle(color: Colors.white)),
-              ],
-            ),
+            Text('${sliderMin.toInt()} KM',
+                style: TextStyle(color: Colors.white)), // Min allowed
+            Text('${sliderMax.toInt()} KM',
+                style: TextStyle(color: Colors.white)), // Max allowed
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 
   Widget _buildRatingCheckboxes() {
-    List<bool> _selectedRatings = List.generate(5, (index) => false);
-
     return StatefulBuilder(
       builder: (context, setState) {
         return Column(
@@ -308,9 +403,14 @@ class _NameSearchPageState extends State<NameSearchPage> {
                       hintText: 'Search...',
                       prefixIcon: Icon(Icons.search),
                       filled: true,
-                      fillColor: Colors.grey[900],
-                      border: InputBorder.none,
+                      fillColor: const Color.fromRGBO(28, 28, 28, 1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
+                    onChanged:
+                        _onSearchChanged, // ✅ Call this method when text changes
                   ),
                 ),
                 IconButton(
@@ -322,18 +422,17 @@ class _NameSearchPageState extends State<NameSearchPage> {
           ),
           Expanded(
             child: ListView.builder(
-              controller: _scrollController,
-              itemCount: filteredContractors.length + (_isLoading ? 1 : 0),
+              itemCount: filteredContractors.length,
               itemBuilder: (context, index) {
-                if (index == filteredContractors.length) {
-                  return Center(child: CircularProgressIndicator());
-                }
                 final contractor = filteredContractors[index];
                 return ContractorCard(
                   name: contractor['name'],
                   imageUrl: contractor['imageUrl'],
                   distance: contractor['distance'],
-                  rating: contractor['rating'],
+                  rating:
+                      contractor['rating'], // ✅ Pass calculated average rating
+                  totalRatings: contractor[
+                      'totalRatings'], // ✅ Pass total number of ratings
                   category: 'Renovation',
                   onTap: () {
                     Navigator.pushNamed(
@@ -357,6 +456,7 @@ class ContractorCard extends StatelessWidget {
   final String imageUrl;
   final double distance;
   final double rating;
+  final int totalRatings;
   final String category;
   final VoidCallback onTap;
 
@@ -365,6 +465,7 @@ class ContractorCard extends StatelessWidget {
     required this.imageUrl,
     required this.distance,
     required this.rating,
+    required this.totalRatings,
     required this.category,
     required this.onTap,
     Key? key,
@@ -378,7 +479,7 @@ class ContractorCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.black,
+          color: Color.fromARGB(255, 28, 28, 28),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -406,24 +507,42 @@ class ContractorCard extends StatelessWidget {
                       Text('${distance.toStringAsFixed(1)} km',
                           style: TextStyle(color: Colors.grey, fontSize: 14)),
                       SizedBox(width: 8),
-                      Icon(Icons.star, color: Colors.yellow, size: 16),
+                      _buildStarRating(rating), // ✅ Rating stars
                       SizedBox(width: 4),
-                      Text(rating.toStringAsFixed(1),
-                          style: TextStyle(color: Colors.white, fontSize: 14)),
+                      Text(
+                        "${rating.toStringAsFixed(1)} (${totalRatings})", // ✅ Format as "x.x(x)"
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            Container(
-              decoration:
-                  BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-              padding: EdgeInsets.all(8),
-              child: Icon(Icons.arrow_forward, color: Colors.orange, size: 24),
-            ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildStarRating(double averageRating) {
+    List<Widget> stars = [];
+
+    // Full stars
+    stars.addAll(List.generate(
+      averageRating.floor(),
+      (index) => Icon(Icons.star, color: Colors.yellow, size: 16),
+    ));
+
+    // Half-star if needed
+    if (averageRating - averageRating.floor() >= 0.5) {
+      stars.add(Icon(Icons.star_half, color: Colors.yellow, size: 16));
+    }
+
+    // Ensure 5-star layout by adding empty stars
+    while (stars.length < 5) {
+      stars.add(Icon(Icons.star_border, color: Colors.yellow, size: 16));
+    }
+
+    return Row(children: stars);
   }
 }

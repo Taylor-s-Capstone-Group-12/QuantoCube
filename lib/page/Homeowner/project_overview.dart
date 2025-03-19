@@ -47,7 +47,8 @@ class _ProjectOverviewState extends State<ProjectOverview> {
 
       dynamic isHomeownerValue = userDoc['isHomeowner'];
       if (isHomeownerValue is bool) return isHomeownerValue;
-      if (isHomeownerValue is String) return isHomeownerValue.toLowerCase() == 'true';
+      if (isHomeownerValue is String)
+        return isHomeownerValue.toLowerCase() == 'true';
 
       return false;
     } catch (e) {
@@ -74,7 +75,8 @@ class _ProjectOverviewState extends State<ProjectOverview> {
           _hasMore = false;
         } else {
           _projects.addAll(newProjects);
-          _lastDocument = newProjects.last['documentSnapshot'] as DocumentSnapshot?;
+          _lastDocument =
+              newProjects.last['documentSnapshot'] as DocumentSnapshot?;
         }
       });
     } catch (e) {
@@ -85,7 +87,8 @@ class _ProjectOverviewState extends State<ProjectOverview> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
         !_isLoading &&
         _hasMore) {
       _fetchProjects();
@@ -109,19 +112,43 @@ class _ProjectOverviewState extends State<ProjectOverview> {
           "assets/icons/project/$status.png",
           width: 50,
           height: 50,
-          errorBuilder: (context, error, stackTrace) => const Icon(Icons.image, color: Colors.white54),
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.image, color: Colors.white54),
         ),
         title: Text(projectName,
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-        subtitle: Text("${_formatDate(createdAt)} • $otherUserName",
-            style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              camelToThisCase(status), // ✅ Format status text
+              style: TextStyle(color: Colors.grey[400], fontSize: 14),
+            ),
+            Text(
+              "${_formatDate(createdAt)} • $otherUserName",
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
+          ],
+        ),
         trailing: IconButton(
-          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+          icon: const Icon(Icons.arrow_forward_ios,
+              color: Colors.white, size: 16),
           onPressed: () => Navigator.pushNamed(context, '/message',
               arguments: MessagePageArgs(projectId: projectId)),
         ),
       ),
     );
+  }
+
+  String camelToThisCase(String input) {
+    return input.replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (match) {
+      return '${match.group(1)} ${match.group(2)}';
+    }).replaceFirstMapped(RegExp(r'^\w'), (match) {
+      return match.group(0)!.toUpperCase();
+    });
   }
 
   String _formatDate(Timestamp timestamp) {

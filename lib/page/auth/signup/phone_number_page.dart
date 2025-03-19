@@ -117,10 +117,126 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
   }
 
   // Function to handle "Send OTP" button
+  // void sendOtp() async {
+  //   if (phoneValidator(phoneController.text)) {
+  //     // Refresh Firebase App Check token before sending OTP
+
+  //     await _auth.verifyPhoneNumber(
+  //       phoneNumber: phoneController.text,
+  //       verificationCompleted: (PhoneAuthCredential credential) {
+  //         // Auto-retrieve OTP (for some devices)
+  //       },
+  //       verificationFailed: (FirebaseAuthException e) {
+  //         setState(() {
+  //           otpSent = false;
+  //         });
+  //         print("Verification failed: ${e.message}");
+  //       },
+  //       codeSent: (String verificationId, int? resendToken) {
+  //         setState(() {
+  //           otpSent = true;
+  //         });
+  //       },
+  //       codeAutoRetrievalTimeout: (String verificationId) {},
+  //     );
+  //   } else {
+  //     setState(() {
+  //       isPhoneValid = false;
+  //       otpSent = false;
+  //     });
+  //   }
+  // }
+
+  // void sendOtp() async {
+  //   if (phoneValidator(phoneController.text)) {
+  //     await _auth.verifyPhoneNumber(
+  //       phoneNumber: phoneController.text,
+  //       verificationCompleted: (PhoneAuthCredential credential) {
+  //         // Auto-retrieve OTP (for some devices)
+  //       },
+  //       verificationFailed: (FirebaseAuthException e) {
+  //         setState(() {
+  //           otpSent = false;
+  //         });
+  //         print("Verification failed: ${e.message}");
+  //       },
+  //       codeSent: (String verificationId, int? resendToken) {
+  //         setState(() {
+  //           otpSent = true;
+  //         });
+  //       },
+  //       codeAutoRetrievalTimeout: (String verificationId) {
+  //         // Leave empty but keep this required parameter
+  //       },
+  //       timeout: const Duration(
+  //           seconds: 120), // Extended from default 30 seconds to 120
+  //     );
+  //   } else {
+  //     setState(() {
+  //       isPhoneValid = false;
+  //       otpSent = false;
+  //     });
+  //   }
+  // }
+
+  // Function to verify OTP
+  // void verifyOtp() async {
+  //   String otp = otpController.text.trim();
+
+  //   PhoneAuthCredential credential = PhoneAuthProvider.credential(
+  //     verificationId: verificationId,
+  //     smsCode: otp,
+  //   );
+
+  //   try {
+  //     await FirebaseAuth.instance.signInWithCredential(credential);
+  //     setState(() {
+  //       isOtpValid = true;
+  //     });
+  //   } catch (e) {
+  //     print("OTP verification failed: $e");
+  //     setState(() {
+  //       isOtpValid = false;
+  //     });
+  //   }
+  // }
+
+  // void verifyOtp() async {
+  //   String otp = otpController.text.trim();
+
+  //   try {
+  //     // Create the credential but don't sign in
+  //     PhoneAuthCredential credential = PhoneAuthProvider.credential(
+  //       verificationId: verificationId,
+  //       smsCode: otp,
+  //     );
+
+  //     // Manually verify the credential without completing the sign-in
+  //     // This will throw an exception if the OTP is invalid
+  //     await FirebaseAuth.instance
+  //         .signInWithCredential(credential)
+  //         .then((userCredential) {
+  //       // Immediately sign out to avoid actually logging the user in
+  //       FirebaseAuth.instance.signOut();
+
+  //       setState(() {
+  //         isOtpValid = true;
+  //       });
+
+  //       // Here you can store or use the verified phone number
+  //       String verifiedPhoneNumber = userCredential.user?.phoneNumber ?? "";
+  //       print("Phone number verified: $verifiedPhoneNumber");
+  //     });
+  //   } catch (e) {
+  //     print("OTP verification failed: $e");
+  //     setState(() {
+  //       isOtpValid = false;
+  //     });
+  //   }
+  // }
+
   void sendOtp() async {
     if (phoneValidator(phoneController.text)) {
-      // Refresh Firebase App Check token before sending OTP
-
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneController.text,
         verificationCompleted: (PhoneAuthCredential credential) {
@@ -134,10 +250,17 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
         },
         codeSent: (String verificationId, int? resendToken) {
           setState(() {
+            this.verificationId = verificationId; // 🔹 Store verification ID
             otpSent = true;
           });
         },
-        codeAutoRetrievalTimeout: (String verificationId) {},
+        codeAutoRetrievalTimeout: (String verificationId) {
+          setState(() {
+            this.verificationId =
+                verificationId; // 🔹 Store verification ID even after timeout
+          });
+        },
+        timeout: const Duration(seconds: 120),
       );
     } else {
       setState(() {
@@ -147,20 +270,25 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
     }
   }
 
-  // Function to verify OTP
   void verifyOtp() async {
-    String otp = otpController.text.trim();
-
-    PhoneAuthCredential credential = PhoneAuthProvider.credential(
-      verificationId: verificationId,
-      smsCode: otp,
-    );
+    String otp = otpController.text.trim(); // 🔹 Get OTP from text box
 
     try {
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: verificationId, // 🔹 Use stored verificationId
+        smsCode: otp,
+      );
+
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      FirebaseAuth.instance.signOut(); // 🔹 Sign out after verification
+
       setState(() {
         isOtpValid = true;
       });
+
+      print("Phone number verified: ${userCredential.user?.phoneNumber}");
     } catch (e) {
       print("OTP verification failed: $e");
       setState(() {

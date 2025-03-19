@@ -27,18 +27,13 @@ class _QuotationReviewPageState extends State<QuotationReviewPage> {
     'createdAt': '',
   };
 
-  final Map<String, String> _projectDetails = {
-    'budgetMax': '',
-    'budgetMin': '',
-    'comments': '',
-    'createdAt': '',
-    'endDate': '',
+  final Map<String, dynamic> _projectDetails = {
     'location': '',
-    'name': '',
-    'serviceDetail': '',
-    'serviceType': '',
+    'details': '',
     'startDate': '',
-    'status': '',
+    'endDate': '',
+    'itemList': <Map<String, dynamic>>[],
+    'subtotal': 0.0,
   };
 
   @override

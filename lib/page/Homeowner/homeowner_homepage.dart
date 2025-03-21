@@ -19,6 +19,7 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
   late String userId;
   bool isHomeowner = false;
   bool isLoading = true;
+  String username = 'user';
 
   @override
   void initState() {
@@ -29,6 +30,7 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
   Future<void> _initializeUser() async {
     userId = FirebaseAuth.instance.currentUser!.uid;
     isHomeowner = await getUserType(userId);
+    username = await getNameFromId(userId) ?? 'user';
     setState(() {
       isLoading = false;
     });
@@ -52,7 +54,7 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 50),
-              _buildHeader(),
+              _buildHeader(username),
               const SizedBox(height: 15),
               _buildSearchBar(context),
               const SizedBox(height: 20),
@@ -76,7 +78,7 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String name) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -88,9 +90,9 @@ class _HomeownerHomePageState extends State<HomeownerHomePage> {
               style: TextStyle(color: Colors.grey[400], fontSize: 14),
             ),
             const SizedBox(height: 5),
-            const Text(
-              "Hello, Matiny.",
-              style: TextStyle(
+            Text(
+              "Hello, $name.",
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,

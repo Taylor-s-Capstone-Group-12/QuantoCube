@@ -38,7 +38,7 @@ void main() async {
   );
 
   // Reset shared preferences
-  // resetSharedPreferences();
+  //resetSharedPreferences();
 
   runApp(const MyApp());
 }

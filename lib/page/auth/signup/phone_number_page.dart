@@ -270,6 +270,19 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
     }
   }
 
+  void pushToNextPage() {
+    if (mounted) {
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (_) => NameSetupPage(
+            signUpData: widget.signUpData,
+          ),
+        ),
+      );
+    }
+  }
+
   void verifyOtp() async {
     String otp = otpController.text.trim(); // 🔹 Get OTP from text box
 
@@ -300,14 +313,7 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
       print('valid');
       // Store verified phone number
       widget.signUpData['phone'] = phoneController.text;
-      Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (_) => NameSetupPage(
-            signUpData: widget.signUpData,
-          ),
-        ),
-      );
+      pushToNextPage();
     } else {
       print('notvalid');
     }
@@ -342,6 +348,7 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
           Row(
             children: [
               Expanded(
+                flex: 3,
                 child: TextInputBox(
                   controller: phoneController,
                   hintText: 'Phone Number',
@@ -357,15 +364,25 @@ class _SignUpPhoneContentState extends State<SignUpPhoneContent> {
                 ),
               ),
               const SizedBox(width: 10),
-              ElevatedButton(
-                onPressed: isPhoneValid ? sendOtp : null, // 🔹 Call sendOtp()
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+              Expanded(
+                child: FilledButton(
+                  onPressed: isPhoneValid ? sendOtp : null, // 🔹 Call sendOtp()
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 25),
+                  ),
+                  child: const Text(
+                    'Send',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-                child:
-                    const Text('Send', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),

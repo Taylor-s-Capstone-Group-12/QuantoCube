@@ -64,6 +64,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 8, 6, 8),
       body: Center(
         child: FutureBuilder(
             future: _initializeVideoPlayerFuture,

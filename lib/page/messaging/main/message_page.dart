@@ -46,6 +46,7 @@ class _MessagePageState extends State<MessagePage> {
 
   Future<void> initUser() async {
     userId = FirebaseAuth.instance.currentUser!.uid;
+    //userId = "th9IsjZxdlOB6md5jBdnAjw3XJG3";
     isHomeowner = await getUserType(userId);
 
     await getRecepient(); // Wait for the recipient to load

@@ -292,8 +292,8 @@ class TitleBar extends StatelessWidget {
               fontSize: 14,
             ),
           ),
-          if (!isHomeowner) const SizedBox(height: 30),
-          if (!isHomeowner)
+          if (isHomeowner) const SizedBox(height: 30),
+          if (isHomeowner)
             SizedBox(
               width: double.infinity,
               height: 50,
